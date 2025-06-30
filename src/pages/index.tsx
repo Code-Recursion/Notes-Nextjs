@@ -5,6 +5,7 @@ import userService from "../services/userService";
 import Notes from "@/components/Notes/Notes";
 import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
+import { ModeToggle } from "@/components/ui/dark-mode-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -95,7 +96,8 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-white text-black">
+    <div className="">
+      <ModeToggle />
       <div className="">Hello World</div>
       {user === null ? (
         showLogin ? (
