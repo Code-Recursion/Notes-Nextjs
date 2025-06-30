@@ -5,6 +5,7 @@ import Star from "@/assets/star";
 import EditIcon from "@/assets/EditIcon";
 // import EditNoteModal from "./EditNoteModal";
 import DeleteIcon from "@/assets/DeleteIcon";
+import { Button } from "@/components/ui/button";
 const Notes = () => {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
@@ -37,7 +38,7 @@ const Notes = () => {
     const userData = window?.localStorage?.getItem("loggedNoteappUser");
     const user = JSON.parse(userData);
 
-    const noteObj = { 
+    const noteObj = {
       content: newNote,
       createdAt: new Date().toISOString(),
       important: false,
@@ -247,7 +248,7 @@ const Notes = () => {
         </ul>
         <form onSubmit={addUserNote}>
           <input value={newNote} onChange={handleNewNote} />
-          <button>save</button>
+          <Button>save</Button>
         </form>
       </>
     </div>
