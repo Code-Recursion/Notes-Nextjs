@@ -1,4 +1,15 @@
 import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type RegisterFormProps = {
   handleRegister: (credentials: {
@@ -26,44 +37,60 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   };
 
   return (
-    <div className="login-form">
-      <h2>Register</h2>
-      <form onSubmit={onSubmit}>
-        <div>
-          <label htmlFor="username">Username:</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="name">Name:</label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button type="submit">Register</button>
-      </form>
-      <p className="toggle-form">
-        Already have an account?{" "}
-        <button type="button" onClick={toggleForm}>
-          Login here
-        </button>
-      </p>
+    <div className="grid place-items-center [height:calc(100vh-200px)] px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Create your account</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={onSubmit} className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter className="flex-col gap-2">
+          <Button type="submit" className="w-full">
+            Register
+          </Button>
+          <CardAction className="mx-auto">
+            <Button variant="link" onClick={toggleForm}>
+              Already have an account? Login
+            </Button>
+          </CardAction>
+          {/* <Button variant="outline" className="w-full">
+            Register with Google
+          </Button> */}
+        </CardFooter>
+      </Card>
     </div>
   );
 };

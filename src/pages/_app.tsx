@@ -11,7 +11,7 @@ export default function App({ Component, pageProps }: AppProps) {
       disableTransitionOnChange
       themes={["light", "dark", "violet", "violet-light"]}
     >
-      <Component {...pageProps} />;
+      <Component {...pageProps} />
     </ThemeProvider>
   );
 }

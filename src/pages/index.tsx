@@ -76,7 +76,6 @@ export default function Home() {
   return (
     <div className="">
       <ModeToggle />
-      <div className="">Hello World</div>
       {errorMessage && <div>{errorMessage}</div>}
       {user === null ? (
         showLogin ? (
