@@ -1,17 +1,25 @@
 import React, { useState } from "react";
 
-const RegisterForm = ({ handleRegister, toggleForm }) => {
+type RegisterFormProps = {
+  handleRegister: (credentials: {
+    username: string;
+    name: string;
+    password: string;
+  }) => void;
+  toggleForm: () => void;
+};
+
+const RegisterForm: React.FC<RegisterFormProps> = ({
+  handleRegister,
+  toggleForm,
+}) => {
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
 
-  const onSubmit = (event) => {
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleRegister({
-      username,
-      name,
-      password,
-    });
+    handleRegister({ username, name, password });
     setUsername("");
     setName("");
     setPassword("");
@@ -27,7 +35,7 @@ const RegisterForm = ({ handleRegister, toggleForm }) => {
             type="text"
             id="username"
             value={username}
-            onChange={({ target }) => setUsername(target.value)}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
         <div>
@@ -36,7 +44,7 @@ const RegisterForm = ({ handleRegister, toggleForm }) => {
             type="text"
             id="name"
             value={name}
-            onChange={({ target }) => setName(target.value)}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div>
@@ -45,14 +53,16 @@ const RegisterForm = ({ handleRegister, toggleForm }) => {
             type="password"
             id="password"
             value={password}
-            onChange={({ target }) => setPassword(target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <button type="submit">Register</button>
       </form>
       <p className="toggle-form">
         Already have an account?{" "}
-        <button onClick={toggleForm}>Login here</button>
+        <button type="button" onClick={toggleForm}>
+          Login here
+        </button>
       </p>
     </div>
   );

@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 
-const LoginForm = ({ handleLogin, toggleForm }) => {
+type LoginFormProps = {
+  handleLogin: (credentials: { username: string; password: string }) => void;
+  toggleForm: () => void;
+};
+
+const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const onSubmit = (event) => {
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleLogin({
-      username,
-      password,
-    });
+    handleLogin({ username, password });
     setUsername("");
     setPassword("");
   };
@@ -24,7 +26,7 @@ const LoginForm = ({ handleLogin, toggleForm }) => {
             type="text"
             id="username"
             value={username}
-            onChange={({ target }) => setUsername(target.value)}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
         <div>
@@ -33,14 +35,16 @@ const LoginForm = ({ handleLogin, toggleForm }) => {
             type="password"
             id="password"
             value={password}
-            onChange={({ target }) => setPassword(target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <button type="submit">Login</button>
       </form>
       <p className="toggle-form">
-        Don't have an account?{" "}
-        <button onClick={toggleForm}>Register here</button>
+        Don&apos;t have an account?{" "}
+        <button type="button" onClick={toggleForm}>
+          Register here
+        </button>
       </p>
     </div>
   );

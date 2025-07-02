@@ -1,42 +1,62 @@
 import React, { useState, useEffect } from "react";
 import noteService from "@/services/noteService";
-import StarFilled from "@/assets/start-filled";
-import Star from "@/assets/star";
-import EditIcon from "@/assets/EditIcon";
-// import EditNoteModal from "./EditNoteModal";
-import DeleteIcon from "@/assets/DeleteIcon";
+// import StarFilled from "@/assets/start-filled";
+// import Star from "@/assets/star";
+// import EditIcon from "@/assets/EditIcon";
+// import DeleteIcon from "@/assets/DeleteIcon";
 import { Button } from "@/components/ui/button";
-const Notes = () => {
-  const [notes, setNotes] = useState([]);
-  const [newNote, setNewNote] = useState("");
-  const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [invalidNote, setInvalidNote] = useState(null);
-  const [user, setUser] = useState(null);
-  const [editModalOpen, setEditModalOpen] = useState(null);
-  const [noteToEdit, setNoteToEdit] = useState(null);
+import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
+import { Input } from "../ui/input";
+
+export interface INote {
+  id: string;
+  content: string;
+  createdAt: string;
+  important: boolean;
+  user: string;
+}
+
+interface UserType {
+  userId: string;
+  name?: string;
+}
+
+const Notes: React.FC = () => {
+  const [notes, setNotes] = useState<INote[]>([]);
+  const [newNote, setNewNote] = useState<string>("");
+  const [showAll, setShowAll] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [invalidNote, setInvalidNote] = useState<string | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
+  // const [editModalOpen, setEditModalOpen] = useState<boolean | null>(null);
+  // const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
 
   useEffect(() => {
-    let userData;
-    let user;
-    if (window !== undefined) {
-      userData = window?.localStorage?.getItem("loggedNoteappUser");
-      user = JSON.parse(userData);
+    const userData = window?.localStorage?.getItem("loggedNoteappUser");
+    if (userData) {
+      const parsedUser: UserType = JSON.parse(userData);
+      setUser(parsedUser);
+      noteService
+        .getAll(parsedUser.userId)
+        .then((data: INote[]) => setNotes(data));
     }
-    setUser(user);
-    noteService.getAll(user?.userId).then((data) => setNotes(data));
   }, []);
 
   const fetchUserNotes = () => {
-    noteService.getAll(user?.userId).then((data) => setNotes(data));
+    if (user) {
+      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
+    }
   };
 
-  const addUserNote = async (event) => {
+  const addUserNote = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const userData = window?.localStorage?.getItem("loggedNoteappUser");
-    const user = JSON.parse(userData);
+    const user: UserType = userData ? JSON.parse(userData) : null;
+
+    if (!user) return;
 
     const noteObj = {
       content: newNote,
@@ -47,210 +67,134 @@ const Notes = () => {
 
     if (newNote === "") {
       setErrorMessage("Note can't be empty");
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      setTimeout(() => setErrorMessage(null), 5000);
     } else if (newNote.length < 6) {
-      setInvalidNote(`Note content can't be less than 5 characters`);
-      setTimeout(() => {
-        setInvalidNote(null);
-      }, 5000);
+      setInvalidNote("Note content can't be less than 5 characters");
+      setTimeout(() => setInvalidNote(null), 5000);
     } else {
       try {
-        const note = await noteService.create(noteObj);
-        setNotes(notes.concat(note));
+        const note: INote = await noteService.create(noteObj);
+        setNotes((prev) => [...prev, note]);
         setNewNote("");
         setSuccessMessage(`Note : "${newNote}" successfully added`);
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 5000);
+        setTimeout(() => setSuccessMessage(null), 5000);
       } catch (error) {
-        setErrorMessage(`Note creation failed!`);
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
+        console.log("error while adding note", error);
+        setErrorMessage("Note creation failed!");
+        setTimeout(() => setErrorMessage(null), 5000);
       }
     }
   };
 
-  // const addNote = (event) => {
-  //   event.preventDefault();
-
-  //   if (newNote === "") {
-  //     setErrorMessage("Note can't be empty");
-  //     setTimeout(() => {
-  //       setErrorMessage(null);
-  //     }, 5000);
-  //   } else if (newNote.length < 6) {
-  //     setInvalidNote(`Note content can't be less than 5 characters`);
-  //     setTimeout(() => {
-  //       setInvalidNote(null);
-  //     }, 5000);
-  //   } else {
-  //     const noteObj = {
-  //       content: newNote,
-  //       date: new Date().toISOString(),
-  //       important: Math.random() < 0.5,
-  //       id: notes.length + 1,
-  //     };
-  //     noteService
-  //       .create(noteObj)
-  //       .then((data) => {
-  //         setNotes(notes.concat(data));
-  //         setNewNote("");
-  //         setSuccessMessage(`Note : "${newNote}" successfully added`);
-  //         setTimeout(() => {
-  //           setSuccessMessage(null);
-  //         }, 5000);
-  //       })
-  //       .catch((error) => {
-  //         console.log("error while adding note", error.message);
-  //       });
-  //   }
-  // };
-
-  const handleNewNote = (event) => {
+  const handleNewNote = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewNote(event.target.value);
   };
 
   const notesToShow = showAll ? notes : notes.filter((note) => note.important);
 
-  const toggleImportanceOf = (id) => {
+  const toggleImportanceOf = (id: string) => {
     const note = notes.find((n) => n.id === id);
+    if (!note) return;
+
     const changedNote = { ...note, important: !note.important };
 
     noteService
       .update(id, changedNote)
-      .then((data) =>
-        setNotes(notes.map((note) => (note.id !== id ? note : data)))
+      .then((data: INote) =>
+        setNotes((prev) => prev.map((note) => (note.id !== id ? note : data)))
       )
-      .catch((error) => {
-        setErrorMessage("failed to toggle the importance");
-
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
-
-        setNotes(notes.filter((n) => n.id !== id));
+      .catch(() => {
+        setErrorMessage("Failed to toggle the importance");
+        setTimeout(() => setErrorMessage(null), 5000);
+        setNotes((prev) => prev.filter((n) => n.id !== id));
       });
   };
-  const handleDelete = (id) => {
+
+  const handleDelete = (id: string) => {
     noteService
       .remove(id)
-      .then((data) => {
+      .then(() => {
         fetchUserNotes();
-        setSuccessMessage(`Note is successfully deleted!`);
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 5000);
+        setSuccessMessage("Note is successfully deleted!");
+        setTimeout(() => setSuccessMessage(null), 5000);
       })
-      .catch((error) => {
-        setErrorMessage(`the was already deleted from the server`);
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
+      .catch(() => {
+        setErrorMessage("Note was already deleted from the server");
+        setTimeout(() => setErrorMessage(null), 5000);
       });
   };
 
-  const handleEdit = (note) => {
-    // const note = notes.filter((item) => item.id === note.id);
-    setEditModalOpen(true);
-    setNoteToEdit(note);
-  };
+  // const handleEdit = (note: INote) => {
+  //   setEditModalOpen(true);
+  //   setNoteToEdit(note);
+  // };
 
-  const Note = ({ note, toggleImportance, handleDelete }) => {
-    const Logo = note.important ? <StarFilled /> : <Star />;
+  const Note: React.FC<{
+    note: INote;
+    toggleImportance: () => void;
+    handleDelete: () => void;
+  }> = ({ note }) => {
+    // const Logo = note.important ? <StarFilled /> : <Star />;
     return (
-      <p>
-        <li
-          style={{
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          {note.content}
-          &nbsp;&nbsp;
-          <button
-            style={{ border: "none", background: "none", outline: "none" }}
-            onClick={toggleImportance}
-          >
-            {Logo}
-          </button>
-          <button
-            style={{ border: "none", background: "none", outline: "none" }}
-            onClick={handleDelete}
-          >
-            <DeleteIcon />
-          </button>
-          <button
-            style={{ border: "none", background: "none", outline: "none" }}
-            onClick={() => {
-              handleEdit(note);
-            }}
-          >
-            <EditIcon />{" "}
-          </button>
-        </li>
-      </p>
+      <div className="flex items-center gap-3 bg-card text-card-foreground border border-border rounded-md p-4">
+        <Checkbox id={note.id} />
+        <Label htmlFor={note.id}>{note.content}</Label>
+      </div>
     );
   };
 
-  const Notification = ({ message }) => {
-    if (message === null) return null;
-    return (
+  const Notification: React.FC<{ message: string | null }> = ({ message }) =>
+    message ? (
       <div className="error">
         <p>{message}</p>
       </div>
-    );
-  };
+    ) : null;
 
-  const Success = ({ message }) => {
-    if (message === null) return null;
-    return (
+  const Success: React.FC<{ message: string | null }> = ({ message }) =>
+    message ? (
       <div className="success">
         <p>{message}</p>
       </div>
-    );
-  };
+    ) : null;
 
-  const Error = ({ message }) => {
-    if (message == null) return null;
-    return (
+  const Error: React.FC<{ message: string | null }> = ({ message }) =>
+    message ? (
       <div className="warning">
         <p>{message}</p>
       </div>
-    );
-  };
+    ) : null;
 
   return (
-    <div>
-      <>
-        <h1 className="text-[54px]">Naughty Notes</h1>
+    <div className="w-[60vw] mx-auto">
+      <h1 className="text-[54px]">Naughty Notes</h1>
 
-        <Notification message={errorMessage} />
-        <Success message={successMessage} />
-        <Error message={invalidNote} />
+      <Notification message={errorMessage} />
+      <Success message={successMessage} />
+      <Error message={invalidNote} />
 
-        {/* <EditNoteModal isOpen={editModalOpen} note={noteToEdit} /> */}
+      <form className="flex gap-[8px]" onSubmit={addUserNote}>
+        <Input value={newNote} onChange={handleNewNote} />
+        <Button>save</Button>
+      </form>
 
-        <button onClick={() => setShowAll(!showAll)}>
-          show {showAll ? "important" : "All"}
-        </button>
-        <ul>
-          {notesToShow.map((note, i) => (
-            <Note
-              key={i}
-              note={note}
-              toggleImportance={() => toggleImportanceOf(note.id)}
-              handleDelete={() => handleDelete(note.id)}
-            />
-          ))}
-        </ul>
-        <form onSubmit={addUserNote}>
-          <input value={newNote} onChange={handleNewNote} />
-          <Button>save</Button>
-        </form>
-      </>
+      <Button
+        variant="secondary"
+        className="my-[8px]"
+        onClick={() => setShowAll(!showAll)}
+      >
+        show {showAll ? "important" : "All"}
+      </Button>
+
+      <ul className="flex flex-col gap-[8px]">
+        {notesToShow.map((note) => (
+          <Note
+            key={note.id}
+            note={note}
+            toggleImportance={() => toggleImportanceOf(note.id)}
+            handleDelete={() => handleDelete(note.id)}
+          />
+        ))}
+      </ul>
     </div>
   );
 };
