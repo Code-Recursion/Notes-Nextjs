@@ -4,19 +4,9 @@ import userService from "../services/userService";
 import Notes from "@/components/Notes/Notes";
 import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
-import { ModeToggle } from "@/components/ui/dark-mode-toggle";
 import { Button } from "@/components/ui/button";
-
-interface UserType {
-  userId: string;
-  name?: string;
-}
-
-interface Credentials {
-  username: string;
-  password: string;
-  name?: string;
-}
+import Navbar from "@/components/Navbar";
+import { Credentials, UserType } from "@/lib/types";
 
 export default function Home() {
   const [user, setUser] = useState<UserType | null>(null);
@@ -74,8 +64,8 @@ export default function Home() {
   };
 
   return (
-    <div className="">
-      <ModeToggle />
+    <>
+      <Navbar user={user} />
       {errorMessage && <div>{errorMessage}</div>}
       {user === null ? (
         showLogin ? (
@@ -87,16 +77,8 @@ export default function Home() {
           />
         )
       ) : (
-        <div>
-          <div className="user-info">
-            <p>{user.name} logged in</p>
-            <Button variant="destructive" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-          <Notes />
-        </div>
+      <Notes />
       )}
-    </div>
+    </>
   );
 }
