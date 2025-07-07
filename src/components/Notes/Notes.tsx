@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
-
-export interface INote {
-  id: string;
-  content: string;
-  createdAt: string;
-  important: boolean;
-  user: string;
-}
+import { Pencil, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { INote } from "@/lib/types";
 
 interface UserType {
   userId: string;
@@ -30,8 +31,8 @@ const Notes: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [invalidNote, setInvalidNote] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
-  // const [editModalOpen, setEditModalOpen] = useState<boolean | null>(null);
-  // const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+  const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
 
   useEffect(() => {
     const userData = window?.localStorage?.getItem("loggedNoteappUser");
@@ -91,7 +92,6 @@ const Notes: React.FC = () => {
   };
 
   const notesToShow = showAll ? notes : notes.filter((note) => note.important);
-
   const toggleImportanceOf = (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
@@ -124,21 +124,53 @@ const Notes: React.FC = () => {
       });
   };
 
-  // const handleEdit = (note: INote) => {
-  //   setEditModalOpen(true);
-  //   setNoteToEdit(note);
-  // };
+  const handleEditClick = (note: INote) => {
+    setEditModalOpen(true);
+    setNoteToEdit(note);
+  };
+
+  const handleUpdate = () => {
+    setEditModalOpen(false);
+    noteService.update(noteToEdit?.id, noteToEdit);
+    fetchUserNotes();
+  };
 
   const Note: React.FC<{
     note: INote;
     toggleImportance: () => void;
     handleDelete: () => void;
-  }> = ({ note }) => {
+    handleEditClick: () => void;
+  }> = ({ note, toggleImportance, handleDelete, handleEditClick }) => {
     // const Logo = note.important ? <StarFilled /> : <Star />;
     return (
-      <div className="flex items-center gap-3 bg-card text-card-foreground border border-border rounded-md p-4">
-        <Checkbox id={note.id} />
-        <Label htmlFor={note.id}>{note.content}</Label>
+      <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
+        <div className="flex justify-between items-start gap-3">
+          {/* Left: Content */}
+          <div className="flex items-center">
+            <Checkbox id={note.id} />
+            <Label className="pl-[8px]" htmlFor={note.id}>
+              {note.content}
+            </Label>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Pencil
+              size={16}
+              className="cursor-pointer hover:text-primary"
+              onClick={handleEditClick}
+            />
+            <Trash2
+              size={16}
+              className="cursor-pointer hover:text-destructive"
+              onClick={handleDelete}
+            />
+          </div>
+        </div>
+
+        <div className="mt-2 text-xs text-muted-foreground self-end">
+          Created: {new Date(note?.createdAt).toDateString()}
+        </div>
       </div>
     );
   };
@@ -172,6 +204,35 @@ const Notes: React.FC = () => {
       <Success message={successMessage} />
       <Error message={invalidNote} />
 
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit note</DialogTitle>
+          </DialogHeader>
+
+          <Input
+            value={noteToEdit?.content}
+            onChange={(e) =>
+              setNoteToEdit((prev) =>
+                prev ? { ...prev, content: e.target.value } : null
+              )
+            }
+            autoFocus
+          />
+
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditModalOpen(false)}
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <form className="flex gap-[8px]" onSubmit={addUserNote}>
         <Input value={newNote} onChange={handleNewNote} />
         <Button>save</Button>
@@ -192,6 +253,7 @@ const Notes: React.FC = () => {
             note={note}
             toggleImportance={() => toggleImportanceOf(note.id)}
             handleDelete={() => handleDelete(note.id)}
+            handleEditClick={() => handleEditClick(note)}
           />
         ))}
       </ul>

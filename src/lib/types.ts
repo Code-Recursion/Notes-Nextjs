@@ -8,3 +8,11 @@ export interface Credentials {
   password: string;
   name?: string;
 }
+
+export interface INote {
+  id: string;
+  content: string;
+  createdAt: string;
+  important: boolean;
+  user: string;
+}
