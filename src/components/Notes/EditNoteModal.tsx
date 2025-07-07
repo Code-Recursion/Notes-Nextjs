@@ -1,5 +1,5 @@
+import { INote } from "@/lib/types";
 import React from "react";
-import { INote } from "./Notes";
 
 const EditNoteModal: React.FC<{ isOpen: boolean; note: INote }> = ({
   isOpen,
