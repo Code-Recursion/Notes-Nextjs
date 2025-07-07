@@ -1,93 +1,55 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import { useEffect, useState } from "react";
 import loginService from "../services/loginService";
 import userService from "../services/userService";
 import Notes from "@/components/Notes/Notes";
 import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
-import { ModeToggle } from "@/components/ui/dark-mode-toggle";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Navbar from "@/components/Navbar";
+import { Credentials, UserType } from "@/lib/types";
 
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [user, setUser] = useState<UserType | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(true);
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
     if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON);
+      const user: UserType = JSON.parse(loggedUserJSON);
       setUser(user);
-      // login.setToken(user.token);
     }
   }, []);
-  console.log("userx", user);
 
-  const handleLogin = async (credentials) => {
+  const handleLogin = async (credentials: Credentials) => {
     try {
-      const user = await loginService.login(credentials);
+      const user: UserType = await loginService.login(credentials);
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
-      // noteService.setToken(user.token);
       setUser(user);
     } catch (exception) {
+      console.log("erro while logging in", exception);
       setErrorMessage("Wrong credentials");
       setTimeout(() => {
         setErrorMessage(null);
       }, 5000);
     }
-    {
-      user === null ? (
-        showLogin ? (
-          <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
-        ) : (
-          <RegisterForm
-            handleRegister={handleRegister}
-            toggleForm={toggleForm}
-          />
-        )
-      ) : (
-        <div>
-          <div className="user-info">
-            <p>{user.name} logged in</p>
-            <button onClick={handleLogout}>Logout</button>
-          </div>
-          <Note />
-        </div>
-      );
-    }
   };
 
-  const handleRegister = async (credentials) => {
+  const handleRegister = async (credentials: Credentials) => {
     try {
       await userService.register(credentials);
-      const user = await loginService.login({
+      const user: UserType = await loginService.login({
         username: credentials.username,
         password: credentials.password,
       });
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
-      // noteService.setToken(user.token);
       setUser(user);
     } catch (exception) {
-      setErrorMessage(exception.response?.data?.error || "Registration failed");
+      setErrorMessage("Registration failed");
+      console.log("exception.response?.data?.error", exception);
       setTimeout(() => {
         setErrorMessage(null);
       }, 5000);
     }
-  };
-
-  const handleLogout = () => {
-    window.localStorage.removeItem("loggedNoteappUser");
-    setUser(null);
-    // noteService.setToken(null);
   };
 
   const toggleForm = () => {
@@ -96,9 +58,9 @@ export default function Home() {
   };
 
   return (
-    <div className="">
-      <ModeToggle />
-      <div className="">Hello World</div>
+    <>
+      <Navbar user={user} />
+      {errorMessage && <div>{errorMessage}</div>}
       {user === null ? (
         showLogin ? (
           <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
@@ -109,14 +71,8 @@ export default function Home() {
           />
         )
       ) : (
-        <div>
-          <div className="user-info">
-            <p>{user.name} logged in</p>
-            <button onClick={handleLogout}>Logout</button>
-          </div>
-          <Notes />
-        </div>
+        <Notes />
       )}
-    </div>
+    </>
   );
 }

@@ -9,9 +9,9 @@ export default function App({ Component, pageProps }: AppProps) {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
-      themes={["light", "dark", "violet", "violet-light"]}
+      themes={["light", "dark"]}
     >
-      <Component {...pageProps} />;
+      <Component {...pageProps} />
     </ThemeProvider>
   );
 }
