@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, StarIcon, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -129,7 +129,8 @@ const Notes: React.FC = () => {
     setNoteToEdit(note);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setEditModalOpen(false);
     noteService.update(noteToEdit?.id, noteToEdit);
     fetchUserNotes();
@@ -137,11 +138,11 @@ const Notes: React.FC = () => {
 
   const Note: React.FC<{
     note: INote;
-    toggleImportance: () => void;
+    toggleImportance: (id: string) => void;
     handleDelete: () => void;
     handleEditClick: () => void;
   }> = ({ note, toggleImportance, handleDelete, handleEditClick }) => {
-    // const Logo = note.important ? <StarFilled /> : <Star />;
+    const Logo = note.important ? <StarIcon fill="#d3d3d3" /> : <StarIcon />;
     return (
       <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
@@ -154,7 +155,19 @@ const Notes: React.FC = () => {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            {/* <Logo
+              size={16}
+              className="cursor-pointer hover:text-primary"
+              onClick={handleEditClick}
+            /> */}
+            <span
+              onClick={() => {
+                toggleImportance(note?.id);
+              }}
+            >
+              {Logo}
+            </span>
             <Pencil
               size={16}
               className="cursor-pointer hover:text-primary"
@@ -209,27 +222,28 @@ const Notes: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Edit note</DialogTitle>
           </DialogHeader>
+          <form onSubmit={handleUpdate}>
+            <Input
+              value={noteToEdit?.content}
+              onChange={(e) =>
+                setNoteToEdit((prev) =>
+                  prev ? { ...prev, content: e.target.value } : null
+                )
+              }
+              autoFocus
+            />
 
-          <Input
-            value={noteToEdit?.content}
-            onChange={(e) =>
-              setNoteToEdit((prev) =>
-                prev ? { ...prev, content: e.target.value } : null
-              )
-            }
-            autoFocus
-          />
-
-          <DialogFooter className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setEditModalOpen(false)}
-              type="button"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdate}>Save</Button>
-          </DialogFooter>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setEditModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button>Save</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
