@@ -24,7 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   };
 
   return (
-    <div className="flex justify-between w-[60vw] mx-auto py-[8px] items-center">
+    <div className="flex justify-between px-[16px] md:w-[60vw] md:mx-auto py-[8px] items-center">
       {user ? (
         <NavigationMenuItem className="list-none">
           <DropdownMenu>

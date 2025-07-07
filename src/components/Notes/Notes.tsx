@@ -197,7 +197,7 @@ const Notes: React.FC = () => {
     ) : null;
 
   return (
-    <div className="w-[60vw] mx-auto mb-[60px]">
+    <div className="mx-[16px] m-0 md:w-[60vw] md:mx-auto mb-[60px]">
       <h1 className="text-[54px]">Notes</h1>
 
       <Notification message={errorMessage} />
