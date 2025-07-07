@@ -11,7 +11,6 @@ import {
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { ModeToggle } from "./ui/dark-mode-toggle";
 import { UserType } from "@/lib/types";
-import Link from "next/link";
 
 type NavbarProps = {
   user: UserType | null;

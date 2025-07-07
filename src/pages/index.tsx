@@ -4,7 +4,6 @@ import userService from "../services/userService";
 import Notes from "@/components/Notes/Notes";
 import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
-import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { Credentials, UserType } from "@/lib/types";
 
@@ -53,11 +52,6 @@ export default function Home() {
     }
   };
 
-  const handleLogout = () => {
-    window.localStorage.removeItem("loggedNoteappUser");
-    setUser(null);
-  };
-
   const toggleForm = () => {
     setShowLogin(!showLogin);
     setErrorMessage(null);
@@ -77,7 +71,7 @@ export default function Home() {
           />
         )
       ) : (
-      <Notes />
+        <Notes />
       )}
     </>
   );
