@@ -1,8 +1,7 @@
 import axios from "axios";
 
 // This URL will be dynamically set depending on environment
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3002/api/notes";
+const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notes`;
 
 // const baseUrl = "/api/notes";
 // const baseUrl = "https://notes-be-dw7g.onrender.com/api/notes";

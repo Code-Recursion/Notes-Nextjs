@@ -75,21 +75,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 required
               />
             </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button type="submit" className="w-full">
-            Register
-          </Button>
-          <CardAction className="mx-auto">
-            <Button variant="link" onClick={toggleForm}>
-              Already have an account? Login
-            </Button>
-          </CardAction>
-          {/* <Button variant="outline" className="w-full">
+            <CardFooter className="flex-col gap-2">
+              <Button type="submit" className="w-full">
+                Register
+              </Button>
+              <CardAction className="mx-auto">
+                <Button variant="link" onClick={toggleForm}>
+                  Already have an account? Login
+                </Button>
+              </CardAction>
+              {/* <Button variant="outline" className="w-full">
             Register with Google
           </Button> */}
-        </CardFooter>
+            </CardFooter>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );
