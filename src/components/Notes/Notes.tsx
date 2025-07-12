@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import noteService from "@/services/noteService";
-// import StarFilled from "@/assets/start-filled";
-// import Star from "@/assets/star";
-// import EditIcon from "@/assets/EditIcon";
-// import DeleteIcon from "@/assets/DeleteIcon";
 import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
@@ -34,16 +30,21 @@ const Notes: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
 
+  // Set user on initial mount
   useEffect(() => {
     const userData = window?.localStorage?.getItem("loggedNoteappUser");
     if (userData) {
       const parsedUser: UserType = JSON.parse(userData);
       setUser(parsedUser);
-      noteService
-        .getAll(parsedUser.userId)
-        .then((data: INote[]) => setNotes(data));
     }
   }, []);
+
+  // Fetch notes once user is available
+  useEffect(() => {
+    if (user) {
+      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
+    }
+  }, [user]);
 
   const fetchUserNotes = () => {
     if (user) {
@@ -53,11 +54,19 @@ const Notes: React.FC = () => {
 
   const addUserNote = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const userData = window?.localStorage?.getItem("loggedNoteappUser");
-    const user: UserType = userData ? JSON.parse(userData) : null;
-
     if (!user) return;
+
+    if (newNote.trim() === "") {
+      setErrorMessage("Note can't be empty");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+
+    if (newNote.length < 6) {
+      setInvalidNote("Note content can't be less than 5 characters");
+      setTimeout(() => setInvalidNote(null), 5000);
+      return;
+    }
 
     const noteObj = {
       content: newNote,
@@ -66,24 +75,15 @@ const Notes: React.FC = () => {
       user: user.userId,
     };
 
-    if (newNote === "") {
-      setErrorMessage("Note can't be empty");
+    try {
+      const note: INote = await noteService.create(noteObj);
+      setNotes((prev) => [...prev, note]);
+      setNewNote("");
+      setSuccessMessage(`Note: "${newNote}" added`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (error) {
+      setErrorMessage("Note creation failed!");
       setTimeout(() => setErrorMessage(null), 5000);
-    } else if (newNote.length < 6) {
-      setInvalidNote("Note content can't be less than 5 characters");
-      setTimeout(() => setInvalidNote(null), 5000);
-    } else {
-      try {
-        const note: INote = await noteService.create(noteObj);
-        setNotes((prev) => [...prev, note]);
-        setNewNote("");
-        setSuccessMessage(`Note : "${newNote}" successfully added`);
-        setTimeout(() => setSuccessMessage(null), 5000);
-      } catch (error) {
-        console.log("error while adding note", error);
-        setErrorMessage("Note creation failed!");
-        setTimeout(() => setErrorMessage(null), 5000);
-      }
     }
   };
 
@@ -91,7 +91,6 @@ const Notes: React.FC = () => {
     setNewNote(event.target.value);
   };
 
-  const notesToShow = showAll ? notes : notes.filter((note) => note.important);
   const toggleImportanceOf = (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
@@ -100,13 +99,12 @@ const Notes: React.FC = () => {
 
     noteService
       .update(id, changedNote)
-      .then((data: INote) =>
-        setNotes((prev) => prev.map((note) => (note.id !== id ? note : data)))
+      .then((updated) =>
+        setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)))
       )
       .catch(() => {
-        setErrorMessage("Failed to toggle the importance");
+        setErrorMessage("Failed to toggle importance");
         setTimeout(() => setErrorMessage(null), 5000);
-        setNotes((prev) => prev.filter((n) => n.id !== id));
       });
   };
 
@@ -115,11 +113,11 @@ const Notes: React.FC = () => {
       .remove(id)
       .then(() => {
         fetchUserNotes();
-        setSuccessMessage("Note is successfully deleted!");
+        setSuccessMessage("Note deleted!");
         setTimeout(() => setSuccessMessage(null), 5000);
       })
       .catch(() => {
-        setErrorMessage("Note was already deleted from the server");
+        setErrorMessage("Note was already deleted from server");
         setTimeout(() => setErrorMessage(null), 5000);
       });
   };
@@ -131,10 +129,18 @@ const Notes: React.FC = () => {
 
   const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!noteToEdit) return;
     setEditModalOpen(false);
-    noteService.update(noteToEdit?.id, noteToEdit);
-    fetchUserNotes();
+    try {
+      await noteService.update(noteToEdit.id, noteToEdit);
+      fetchUserNotes();
+    } catch {
+      setErrorMessage("Update failed");
+      setTimeout(() => setErrorMessage(null), 5000);
+    }
   };
+
+  const notesToShow = showAll ? notes : notes.filter((n) => n.important);
 
   const Note: React.FC<{
     note: INote;
@@ -146,28 +152,14 @@ const Notes: React.FC = () => {
     return (
       <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
-          {/* Left: Content */}
           <div className="flex items-center">
             <Checkbox id={note.id} />
-            <Label className="pl-[8px]" htmlFor={note.id}>
+            <Label className="pl-2" htmlFor={note.id}>
               {note.content}
             </Label>
           </div>
-
-          {/* Right: Actions */}
           <div className="flex items-center gap-3 text-muted-foreground">
-            {/* <Logo
-              size={16}
-              className="cursor-pointer hover:text-primary"
-              onClick={handleEditClick}
-            /> */}
-            <span
-              onClick={() => {
-                toggleImportance(note?.id);
-              }}
-            >
-              {Logo}
-            </span>
+            <span onClick={() => toggleImportance(note.id)}>{Logo}</span>
             <Pencil
               size={16}
               className="cursor-pointer hover:text-primary"
@@ -180,42 +172,30 @@ const Notes: React.FC = () => {
             />
           </div>
         </div>
-
         <div className="mt-2 text-xs text-muted-foreground self-end">
-          Created: {new Date(note?.createdAt).toDateString()}
+          Created: {new Date(note.createdAt).toDateString()}
         </div>
       </div>
     );
   };
 
-  const Notification: React.FC<{ message: string | null }> = ({ message }) =>
+  const AlertBox: React.FC<{
+    type: "error" | "success" | "warning";
+    message: string | null;
+  }> = ({ type, message }) =>
     message ? (
-      <div className="error">
-        <p>{message}</p>
-      </div>
-    ) : null;
-
-  const Success: React.FC<{ message: string | null }> = ({ message }) =>
-    message ? (
-      <div className="success">
-        <p>{message}</p>
-      </div>
-    ) : null;
-
-  const Error: React.FC<{ message: string | null }> = ({ message }) =>
-    message ? (
-      <div className="warning">
+      <div className={`${type}`}>
         <p>{message}</p>
       </div>
     ) : null;
 
   return (
-    <div className="mx-[16px] m-0 md:w-[60vw] md:mx-auto mb-[60px]">
+    <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
 
-      <Notification message={errorMessage} />
-      <Success message={successMessage} />
-      <Error message={invalidNote} />
+      <AlertBox type="error" message={errorMessage} />
+      <AlertBox type="success" message={successMessage} />
+      <AlertBox type="warning" message={invalidNote} />
 
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent>
@@ -224,7 +204,7 @@ const Notes: React.FC = () => {
           </DialogHeader>
           <form onSubmit={handleUpdate}>
             <Input
-              value={noteToEdit?.content}
+              value={noteToEdit?.content || ""}
               onChange={(e) =>
                 setNoteToEdit((prev) =>
                   prev ? { ...prev, content: e.target.value } : null
@@ -232,7 +212,6 @@ const Notes: React.FC = () => {
               }
               autoFocus
             />
-
             <DialogFooter className="mt-4">
               <Button
                 variant="outline"
@@ -247,25 +226,25 @@ const Notes: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <form className="flex gap-[8px]" onSubmit={addUserNote}>
+      <form className="flex gap-2" onSubmit={addUserNote}>
         <Input value={newNote} onChange={handleNewNote} />
         <Button>save</Button>
       </form>
 
       <Button
         variant="secondary"
-        className="my-[8px]"
+        className="my-2"
         onClick={() => setShowAll(!showAll)}
       >
-        show {showAll ? "important" : "All"}
+        show {showAll ? "important" : "all"}
       </Button>
 
-      <ul className="flex flex-col gap-[8px]">
+      <ul className="flex flex-col gap-2">
         {notesToShow.map((note) => (
           <Note
             key={note.id}
             note={note}
-            toggleImportance={() => toggleImportanceOf(note.id)}
+            toggleImportance={toggleImportanceOf}
             handleDelete={() => handleDelete(note.id)}
             handleEditClick={() => handleEditClick(note)}
           />
