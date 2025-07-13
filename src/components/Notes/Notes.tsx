@@ -227,8 +227,8 @@ const Notes: React.FC = () => {
     ) : null;
 
   const noteSchema = z.object({
-    content: z.string().min(5, "Note must be at least 5 characters"),
-    title: z.string().min(1, "Title is required"),
+    title: z.string().min(1, "Note Title is required"),
+    content: z.string().min(1, "Note Content is required"),
     important: z.boolean(),
   });
 
@@ -244,11 +244,13 @@ const Notes: React.FC = () => {
   } = useForm<NoteFormValues>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
-      content: "",
       title: "",
+      content: "",
       important: false,
     },
   });
+
+  console.log("errors", errors);
 
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
@@ -310,16 +312,12 @@ const Notes: React.FC = () => {
             className="flex flex-col gap-4"
           >
             <Input {...register("title")} placeholder="title" autoFocus />
-            {errors.content && (
+            {errors.title && (
               <p className="text-sm text-red-500">{errors?.title?.message}</p>
             )}
-            <Textarea
-              {...register("content")}
-              placeholder="Note content"
-              autoFocus
-            />
+            <Textarea {...register("content")} placeholder="Note content" />
             {errors.content && (
-              <p className="text-sm text-red-500">{errors.content.message}</p>
+              <p className="text-sm text-red-500">{errors?.content?.message}</p>
             )}
 
             <div className="flex justify-between items-center">
