@@ -1,46 +1,33 @@
 import React, { useState, useEffect } from "react";
 import noteService from "@/services/noteService";
 import { Button } from "@/components/ui/button";
-import { Label } from "../ui/label";
-import { Switch } from "../ui/switch";
-import { Input } from "../ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
 import { INote } from "@/lib/types";
-import { Textarea } from "../ui/textarea";
-
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-// import Star from "@/assets/star"
 import StarFilled from "@/assets/start-filled";
 import Star from "@/assets/star";
 import EditIcon from "@/assets/EditIcon";
 import DeleteIcon from "@/assets/DeleteIcon";
 import { Separator } from "../ui/separator";
 import Confirm from "../Confirm/Confirm";
+import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
 
 interface UserType {
   userId: string;
   name?: string;
 }
+const NOTE_MODAL_TYPE = {
+  CREATE: "CREATE",
+  EDIT: "EDIT",
+};
 
 const Notes: React.FC = () => {
   const [notes, setNotes] = useState<INote[]>([]);
-  const [newNote, setNewNote] = useState<string>("");
   const [showAll, setShowAll] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [invalidNote, setInvalidNote] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
-  const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
-  const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
+  const [addEditModalOpen, setAddEditModalOpen] = useState<boolean>(false);
+  const [noteToEdit, setNoteToEdit] = useState<NoteFormValues | null>(null);
+  const [noteModalType, setNoteModalType] = useState<string>("CREATE");
   const [isConfirmOpen, setIsOpenConfirm] = useState<boolean>(false);
   const [noteToDelete, setNoteToDelete] = useState<string>("");
 
@@ -66,44 +53,64 @@ const Notes: React.FC = () => {
     }
   };
 
-  const addUserNote = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  // const addUserNote = async (noteData: NoteFormValues) => {
+  //   if (!user) return;
+  //   const noteObj = {
+  //     user: user.userId,
+  //     title: noteData.title,
+  //     content: noteData.content,
+  //     important: noteData.important,
+  //   };
+
+  //   try {
+  //     let note: INote;
+  //     if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
+  //       note = await noteService.create(noteObj);
+  //     } else {
+  //       await noteService.update(noteToEdit.id, noteToEdit);
+  //     }
+  //     setNotes((prev) => [...prev, note]);
+  //     setSuccessMessage(`Note: "${noteData.title}" added`);
+  //     setTimeout(() => setSuccessMessage(null), 5000);
+  //     fetchUserNotes();
+  //   } catch (error) {
+  //     setErrorMessage("Note creation failed!");
+  //     console.log("error", error);
+  //     setTimeout(() => setErrorMessage(null), 5000);
+  //   }
+  // };
+
+  const addUserNote = async (noteData: NoteFormValues) => {
     if (!user) return;
 
-    if (newNote.trim() === "") {
-      setErrorMessage("Note can't be empty");
-      setTimeout(() => setErrorMessage(null), 5000);
-      return;
-    }
-
-    if (newNote.length < 6) {
-      setInvalidNote("Note content can't be less than 5 characters");
-      setTimeout(() => setInvalidNote(null), 5000);
-      return;
-    }
-
     const noteObj = {
-      content: newNote,
-      createdAt: new Date().toISOString(),
-      important: false,
       user: user.userId,
+      title: noteData.title,
+      content: noteData.content,
+      important: noteData.important,
     };
 
     try {
-      const note: INote = await noteService.create(noteObj);
-      setNotes((prev) => [...prev, note]);
-      setNewNote("");
-      setSuccessMessage(`Note: "${newNote}" added`);
+      if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
+        const newNote = await noteService.create(noteObj);
+        setNotes((prev) => [...prev, newNote]);
+        setSuccessMessage(`Note: "${noteData.title}" added`);
+      } else if (noteToEdit && "id" in noteToEdit) {
+        const updatedNote = await noteService.update(noteToEdit.id, noteObj);
+        setNotes((prev) =>
+          prev.map((n) => (n.id === noteToEdit.id ? updatedNote : n))
+        );
+        setSuccessMessage(`Note: "${noteData.title}" updated`);
+      }
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
-      setErrorMessage("Note creation failed!");
+      setErrorMessage("Note operation failed!");
       console.log("error", error);
       setTimeout(() => setErrorMessage(null), 5000);
+    } finally {
+      setNoteToEdit(null);
+      fetchUserNotes();
     }
-  };
-
-  const handleNewNote = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewNote(event.target.value);
   };
 
   const toggleImportanceOf = (id: string) => {
@@ -121,6 +128,7 @@ const Notes: React.FC = () => {
         setErrorMessage("Failed to toggle importance");
         setTimeout(() => setErrorMessage(null), 5000);
       });
+    fetchUserNotes();
   };
 
   const handleDelete = (id: string) => {
@@ -139,22 +147,23 @@ const Notes: React.FC = () => {
   };
 
   const handleEditClick = (note: INote) => {
-    setEditModalOpen(true);
+    setAddEditModalOpen(true);
+    setNoteModalType(NOTE_MODAL_TYPE.EDIT);
     setNoteToEdit(note);
   };
 
-  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!noteToEdit) return;
-    setEditModalOpen(false);
-    try {
-      await noteService.update(noteToEdit.id, noteToEdit);
-      fetchUserNotes();
-    } catch {
-      setErrorMessage("Update failed");
-      setTimeout(() => setErrorMessage(null), 5000);
-    }
-  };
+  // const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   if (!noteToEdit) return;
+  //   setEditModalOpen(false);
+  //   try {
+  //     await noteService.update(noteToEdit.id, noteToEdit);
+  //     fetchUserNotes();
+  //   } catch {
+  //     setErrorMessage("Update failed");
+  //     setTimeout(() => setErrorMessage(null), 5000);
+  //   }
+  // };
 
   const notesToShow = showAll ? notes : notes.filter((n) => n.important);
 
@@ -179,7 +188,6 @@ const Notes: React.FC = () => {
     handleDelete: () => void;
     handleEditClick: () => void;
   }> = ({ note, toggleImportance, handleDelete, handleEditClick }) => {
-    // const Logo = note.important ? <StarIcon fill="#d3d3d3" /> : <StarIcon />;
     const Logo = note.important ? <StarFilled /> : <Star />;
     return (
       <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
@@ -190,17 +198,22 @@ const Notes: React.FC = () => {
                 {note.title}
               </h4>
               <div className="flex items-center gap-3 text-muted-foreground">
-                <span onClick={() => toggleImportance(note.id)}>{Logo}</span>
+                <button
+                  onClick={() => toggleImportance(note.id)}
+                  className="hover:text-yellow-300 cursor-pointer"
+                >
+                  {Logo}
+                </button>
                 <button
                   onClick={handleEditClick}
-                  className="text-muted-foreground hover:text-orange-300 transition-colors"
+                  className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors"
                   aria-label="Delete note"
                 >
                   <EditIcon />
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors"
                   aria-label="Delete note"
                 >
                   <DeleteIcon />
@@ -225,172 +238,25 @@ const Notes: React.FC = () => {
         <p>{message}</p>
       </div>
     ) : null;
-
-  const noteSchema = z.object({
-    title: z.string().min(1, "Note Title is required"),
-    content: z.string().min(1, "Note Content is required"),
-    important: z.boolean(),
-  });
-
-  type NoteFormValues = z.infer<typeof noteSchema>;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch,
-    setValue,
-  } = useForm<NoteFormValues>({
-    resolver: zodResolver(noteSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-      important: false,
-    },
-  });
-
-  console.log("errors", errors);
-
+  const handleAddNoteCTA = () => {
+    setNoteModalType(NOTE_MODAL_TYPE.CREATE);
+    setAddEditModalOpen(true);
+    setNoteToEdit(null);
+  };
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
+
       <AlertBox type="error" message={errorMessage} />
       <AlertBox type="success" message={successMessage} />
-      <AlertBox type="warning" message={invalidNote} />
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit note</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdate}>
-            <Input
-              value={noteToEdit?.content || ""}
-              onChange={(e) =>
-                setNoteToEdit((prev) =>
-                  prev ? { ...prev, content: e.target.value } : null
-                )
-              }
-              autoFocus
-            />
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setEditModalOpen(false)}
-                type="button"
-              >
-                Cancel
-              </Button>
-              <Button>Save</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add note</DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={handleSubmit(async (data) => {
-              if (!user) return;
-              try {
-                await noteService.create({
-                  ...data,
-                  user: user.userId,
-                  createdAt: new Date().toISOString(),
-                });
-                fetchUserNotes();
-                reset(); // reset form after submit
-                setAddModalOpen(false);
-                setSuccessMessage("Note added successfully");
-              } catch {
-                setErrorMessage("Failed to add note");
-              }
-            })}
-            className="flex flex-col gap-4"
-          >
-            <Input {...register("title")} placeholder="title" autoFocus />
-            {errors.title && (
-              <p className="text-sm text-red-500">{errors?.title?.message}</p>
-            )}
-            <Textarea {...register("content")} placeholder="Note content" />
-            {errors.content && (
-              <p className="text-sm text-red-500">{errors?.content?.message}</p>
-            )}
-
-            <div className="flex justify-between items-center">
-              <Label htmlFor="important">Important</Label>
-              <Switch
-                checked={watch("important")}
-                onCheckedChange={(val) => setValue("important", val)}
-              />
-            </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => {
-                  setAddModalOpen(false);
-                  reset();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
-          </form>
-          {/* <form onSubmit={handleUpdate} className="flex flex-col gap-4">
-            <Input
-              value={noteToEdit?.content || ""}
-              onChange={(e) =>
-                setNoteToEdit((prev) =>
-                  prev ? { ...prev, content: e.target.value } : null
-                )
-              }
-              autoFocus
-            />
-            <Textarea
-              cols={5}
-              minLength={5}
-              name="content"
-              placeholder="Content"
-              required
-              className="w-full"
-              rows={4}
-              value={noteToEdit?.content || ""}
-              onChange={(e) =>
-                setNoteToEdit((prev) =>
-                  prev ? { ...prev, content: e.target.value } : null
-                )
-              }
-              autoFocus
-            />
-            <div className="flex justify-between">
-              <Label>Important </Label>
-              <Switch
-                checked={isImportant}
-                onCheckedChange={() => {
-                  setIsImportant((prev) => !prev);
-                }}
-              />
-            </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setEditModalOpen(false)}
-                type="button"
-              >
-                Cancel
-              </Button>
-              <Button>Save</Button>
-            </DialogFooter>
-          </form> */}
-        </DialogContent>
-      </Dialog>
+      <AddEditNoteModal
+        noteData={noteToEdit}
+        addEditModalOpen={addEditModalOpen}
+        setAddEditModalOpen={setAddEditModalOpen}
+        handleNoteSubmit={addUserNote}
+        noteModalType={noteModalType}
+      />
 
       <Confirm
         isOpen={isConfirmOpen}
@@ -402,16 +268,8 @@ const Notes: React.FC = () => {
         confirmText="Delete"
         cancelText="Cancel"
       />
-      <form className="flex gap-2" onSubmit={addUserNote}>
-        <Input value={newNote} onChange={handleNewNote} />
-        <Button>save</Button>
-      </form>
       <div className="flex gap-4 my-4">
-        <Button
-          variant="default"
-          onClick={() => setAddModalOpen(true)}
-          type="button"
-        >
+        <Button variant="default" onClick={handleAddNoteCTA} type="button">
           Add Note
         </Button>
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
