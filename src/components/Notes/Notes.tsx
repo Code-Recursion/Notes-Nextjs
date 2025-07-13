@@ -98,6 +98,7 @@ const Notes: React.FC = () => {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
       setErrorMessage("Note creation failed!");
+      console.log("error", error);
       setTimeout(() => setErrorMessage(null), 5000);
     }
   };
