@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
@@ -27,15 +27,19 @@ export type NoteFormValues = z.infer<typeof noteSchema>;
 
 // Props Interface
 interface AddEditNoteModalProps {
+  noteData: NoteFormValues;
   addEditModalOpen: boolean;
   setAddEditModalOpen: (open: boolean) => void;
   handleNoteSubmit: (data: NoteFormValues) => void;
+  noteModalType: string;
 }
 
 const AddEditNoteModal: React.FC<AddEditNoteModalProps> = ({
+  noteData,
   addEditModalOpen,
   setAddEditModalOpen,
   handleNoteSubmit,
+  noteModalType,
 }) => {
   const {
     register,
@@ -53,11 +57,25 @@ const AddEditNoteModal: React.FC<AddEditNoteModalProps> = ({
     },
   });
 
+  useEffect(() => {
+    if (noteModalType === "EDIT" && noteData) {
+      reset(noteData);
+    } else if (noteModalType === "CREATE") {
+      reset({
+        title: "",
+        content: "",
+        important: false,
+      });
+    }
+  }, [noteData, noteModalType, reset]);
+
   return (
     <Dialog open={addEditModalOpen} onOpenChange={setAddEditModalOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add note</DialogTitle>
+          <DialogTitle>
+            {noteModalType === "CREATE" ? "Create" : "Update"} note
+          </DialogTitle>
           <DialogDescription>
             Fill in the fields to create a new note.
           </DialogDescription>

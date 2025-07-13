@@ -14,6 +14,10 @@ interface UserType {
   userId: string;
   name?: string;
 }
+const NOTE_MODAL_TYPE = {
+  CREATE: "CREATE",
+  EDIT: "EDIT",
+};
 
 const Notes: React.FC = () => {
   const [notes, setNotes] = useState<INote[]>([]);
@@ -22,9 +26,9 @@ const Notes: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [invalidNote, setInvalidNote] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
   const [addEditModalOpen, setAddEditModalOpen] = useState<boolean>(false);
-  const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
+  const [noteToEdit, setNoteToEdit] = useState<NoteFormValues | null>(null);
+  const [noteModalType, setNoteModalType] = useState<string>("CREATE");
   const [isConfirmOpen, setIsOpenConfirm] = useState<boolean>(false);
   const [noteToDelete, setNoteToDelete] = useState<string>("");
 
@@ -50,8 +54,36 @@ const Notes: React.FC = () => {
     }
   };
 
+  // const addUserNote = async (noteData: NoteFormValues) => {
+  //   if (!user) return;
+  //   const noteObj = {
+  //     user: user.userId,
+  //     title: noteData.title,
+  //     content: noteData.content,
+  //     important: noteData.important,
+  //   };
+
+  //   try {
+  //     let note: INote;
+  //     if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
+  //       note = await noteService.create(noteObj);
+  //     } else {
+  //       await noteService.update(noteToEdit.id, noteToEdit);
+  //     }
+  //     setNotes((prev) => [...prev, note]);
+  //     setSuccessMessage(`Note: "${noteData.title}" added`);
+  //     setTimeout(() => setSuccessMessage(null), 5000);
+  //     fetchUserNotes();
+  //   } catch (error) {
+  //     setErrorMessage("Note creation failed!");
+  //     console.log("error", error);
+  //     setTimeout(() => setErrorMessage(null), 5000);
+  //   }
+  // };
+
   const addUserNote = async (noteData: NoteFormValues) => {
     if (!user) return;
+
     const noteObj = {
       user: user.userId,
       title: noteData.title,
@@ -60,15 +92,25 @@ const Notes: React.FC = () => {
     };
 
     try {
-      const note: INote = await noteService.create(noteObj);
-      setNotes((prev) => [...prev, note]);
-      setSuccessMessage(`Note: "${noteData.title}" added`);
+      if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
+        const newNote = await noteService.create(noteObj);
+        setNotes((prev) => [...prev, newNote]);
+        setSuccessMessage(`Note: "${noteData.title}" added`);
+      } else if (noteToEdit && "id" in noteToEdit) {
+        const updatedNote = await noteService.update(noteToEdit.id, noteObj);
+        setNotes((prev) =>
+          prev.map((n) => (n.id === noteToEdit.id ? updatedNote : n))
+        );
+        setSuccessMessage(`Note: "${noteData.title}" updated`);
+      }
       setTimeout(() => setSuccessMessage(null), 5000);
-      fetchUserNotes();
     } catch (error) {
-      setErrorMessage("Note creation failed!");
+      setErrorMessage("Note operation failed!");
       console.log("error", error);
       setTimeout(() => setErrorMessage(null), 5000);
+    } finally {
+      setNoteToEdit(null);
+      fetchUserNotes();
     }
   };
 
@@ -87,6 +129,7 @@ const Notes: React.FC = () => {
         setErrorMessage("Failed to toggle importance");
         setTimeout(() => setErrorMessage(null), 5000);
       });
+    fetchUserNotes();
   };
 
   const handleDelete = (id: string) => {
@@ -105,7 +148,8 @@ const Notes: React.FC = () => {
   };
 
   const handleEditClick = (note: INote) => {
-    setEditModalOpen(true);
+    setAddEditModalOpen(true);
+    setNoteModalType(NOTE_MODAL_TYPE.EDIT);
     setNoteToEdit(note);
   };
 
@@ -195,7 +239,11 @@ const Notes: React.FC = () => {
         <p>{message}</p>
       </div>
     ) : null;
-
+  const handleAddNoteCTA = () => {
+    setNoteModalType(NOTE_MODAL_TYPE.CREATE);
+    setAddEditModalOpen(true);
+    setNoteToEdit(null);
+  };
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
@@ -205,9 +253,11 @@ const Notes: React.FC = () => {
       <AlertBox type="warning" message={invalidNote} />
 
       <AddEditNoteModal
+        noteData={noteToEdit}
         addEditModalOpen={addEditModalOpen}
         setAddEditModalOpen={setAddEditModalOpen}
         handleNoteSubmit={addUserNote}
+        noteModalType={noteModalType}
       />
 
       <Confirm
@@ -221,11 +271,7 @@ const Notes: React.FC = () => {
         cancelText="Cancel"
       />
       <div className="flex gap-4 my-4">
-        <Button
-          variant="default"
-          onClick={() => setAddEditModalOpen(true)}
-          type="button"
-        >
+        <Button variant="default" onClick={handleAddNoteCTA} type="button">
           Add Note
         </Button>
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>

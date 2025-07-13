@@ -25,7 +25,7 @@ const getAll = (userId) => {
   const config = {
     headers: { Authorization: token },
   };
-  const request = axios.get(baseUrl + "/" + userId, config);
+  const request = axios.get(baseUrl + "/user/" + userId, config);
   return request.then((res) => res.data);
 };
 
