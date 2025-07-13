@@ -27,7 +27,7 @@ export type NoteFormValues = z.infer<typeof noteSchema>;
 
 // Props Interface
 interface AddEditNoteModalProps {
-  noteData: NoteFormValues;
+  noteData: NoteFormValues | null;
   addEditModalOpen: boolean;
   setAddEditModalOpen: (open: boolean) => void;
   handleNoteSubmit: (data: NoteFormValues) => void;
