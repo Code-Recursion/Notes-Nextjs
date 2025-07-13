@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import noteService from "@/services/noteService";
 import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
-import { Checkbox } from "../ui/checkbox";
 import { Switch } from "../ui/switch";
 import { Input } from "../ui/input";
 import {
@@ -14,7 +13,6 @@ import {
 } from "../ui/dialog";
 import { INote } from "@/lib/types";
 import { Textarea } from "../ui/textarea";
-import { FormField } from "../ui/form";
 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -24,7 +22,6 @@ import StarFilled from "@/assets/start-filled";
 import Star from "@/assets/star";
 import EditIcon from "@/assets/EditIcon";
 import DeleteIcon from "@/assets/DeleteIcon";
-import { Divide } from "lucide-react";
 import { Separator } from "../ui/separator";
 
 interface UserType {
@@ -43,7 +40,6 @@ const Notes: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
-  const [isImportant, setIsImportant] = useState<boolean>(false);
 
   // Set user on initial mount
   useEffect(() => {
@@ -290,7 +286,7 @@ const Notes: React.FC = () => {
                 reset(); // reset form after submit
                 setAddModalOpen(false);
                 setSuccessMessage("Note added successfully");
-              } catch (err) {
+              } catch {
                 setErrorMessage("Failed to add note");
               }
             })}
