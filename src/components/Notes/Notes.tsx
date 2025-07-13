@@ -3,8 +3,8 @@ import noteService from "@/services/noteService";
 import { Button } from "@/components/ui/button";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
+import { Switch } from "../ui/switch";
 import { Input } from "../ui/input";
-import { Pencil, StarIcon, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,19 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { INote } from "@/lib/types";
+import { Textarea } from "../ui/textarea";
+import { FormField } from "../ui/form";
+
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+// import Star from "@/assets/star"
+import StarFilled from "@/assets/start-filled";
+import Star from "@/assets/star";
+import EditIcon from "@/assets/EditIcon";
+import DeleteIcon from "@/assets/DeleteIcon";
+import { Divide } from "lucide-react";
+import { Separator } from "../ui/separator";
 
 interface UserType {
   userId: string;
@@ -28,7 +41,9 @@ const Notes: React.FC = () => {
   const [invalidNote, setInvalidNote] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
   const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+  const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
+  const [isImportant, setIsImportant] = useState<boolean>(false);
 
   // Set user on initial mount
   useEffect(() => {
@@ -148,28 +163,36 @@ const Notes: React.FC = () => {
     handleDelete: () => void;
     handleEditClick: () => void;
   }> = ({ note, toggleImportance, handleDelete, handleEditClick }) => {
-    const Logo = note.important ? <StarIcon fill="#d3d3d3" /> : <StarIcon />;
+    // const Logo = note.important ? <StarIcon fill="#d3d3d3" /> : <StarIcon />;
+    const Logo = note.important ? <StarFilled /> : <Star />;
     return (
       <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
-          <div className="flex items-center">
-            <Checkbox id={note.id} />
-            <Label className="pl-2" htmlFor={note.id}>
-              {note.content}
-            </Label>
-          </div>
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <span onClick={() => toggleImportance(note.id)}>{Logo}</span>
-            <Pencil
-              size={16}
-              className="cursor-pointer hover:text-primary"
-              onClick={handleEditClick}
-            />
-            <Trash2
-              size={16}
-              className="cursor-pointer hover:text-destructive"
-              onClick={handleDelete}
-            />
+          <div className="w-full">
+            <div className="flex items-center justify-between">
+              <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+                {note.title}
+              </h4>
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <span onClick={() => toggleImportance(note.id)}>{Logo}</span>
+                <button
+                  onClick={handleEditClick}
+                  className="text-muted-foreground hover:text-orange-300 transition-colors"
+                  aria-label="Delete note"
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label="Delete note"
+                >
+                  <DeleteIcon />
+                </button>
+              </div>
+            </div>
+            <Separator className="w-full my-2" />
+            <div className="flex items-center">{note.content}</div>
           </div>
         </div>
         <div className="mt-2 text-xs text-muted-foreground self-end">
@@ -189,14 +212,36 @@ const Notes: React.FC = () => {
       </div>
     ) : null;
 
+  const noteSchema = z.object({
+    content: z.string().min(5, "Note must be at least 5 characters"),
+    title: z.string().min(1, "Title is required"),
+    important: z.boolean(),
+  });
+
+  type NoteFormValues = z.infer<typeof noteSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+    setValue,
+  } = useForm<NoteFormValues>({
+    resolver: zodResolver(noteSchema),
+    defaultValues: {
+      content: "",
+      title: "",
+      important: false,
+    },
+  });
+
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
-
       <AlertBox type="error" message={errorMessage} />
       <AlertBox type="success" message={successMessage} />
       <AlertBox type="warning" message={invalidNote} />
-
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -226,20 +271,133 @@ const Notes: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add note</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={handleSubmit(async (data) => {
+              if (!user) return;
+              try {
+                await noteService.create({
+                  ...data,
+                  user: user.userId,
+                  createdAt: new Date().toISOString(),
+                });
+                fetchUserNotes();
+                reset(); // reset form after submit
+                setAddModalOpen(false);
+                setSuccessMessage("Note added successfully");
+              } catch (err) {
+                setErrorMessage("Failed to add note");
+              }
+            })}
+            className="flex flex-col gap-4"
+          >
+            <Input {...register("title")} placeholder="title" autoFocus />
+            {errors.content && (
+              <p className="text-sm text-red-500">{errors?.title?.message}</p>
+            )}
+            <Textarea
+              {...register("content")}
+              placeholder="Note content"
+              autoFocus
+            />
+            {errors.content && (
+              <p className="text-sm text-red-500">{errors.content.message}</p>
+            )}
+
+            <div className="flex justify-between items-center">
+              <Label htmlFor="important">Important</Label>
+              <Switch
+                checked={watch("important")}
+                onCheckedChange={(val) => setValue("important", val)}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  setAddModalOpen(false);
+                  reset();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+          {/* <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+            <Input
+              value={noteToEdit?.content || ""}
+              onChange={(e) =>
+                setNoteToEdit((prev) =>
+                  prev ? { ...prev, content: e.target.value } : null
+                )
+              }
+              autoFocus
+            />
+            <Textarea
+              cols={5}
+              minLength={5}
+              name="content"
+              placeholder="Content"
+              required
+              className="w-full"
+              rows={4}
+              value={noteToEdit?.content || ""}
+              onChange={(e) =>
+                setNoteToEdit((prev) =>
+                  prev ? { ...prev, content: e.target.value } : null
+                )
+              }
+              autoFocus
+            />
+            <div className="flex justify-between">
+              <Label>Important </Label>
+              <Switch
+                checked={isImportant}
+                onCheckedChange={() => {
+                  setIsImportant((prev) => !prev);
+                }}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setEditModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </Button>
+              <Button>Save</Button>
+            </DialogFooter>
+          </form> */}
+        </DialogContent>
+      </Dialog>
+
       <form className="flex gap-2" onSubmit={addUserNote}>
         <Input value={newNote} onChange={handleNewNote} />
         <Button>save</Button>
       </form>
+      <div className="flex gap-4 my-4">
+        <Button
+          variant="default"
+          onClick={() => setAddModalOpen(true)}
+          type="button"
+        >
+          Add Note
+        </Button>
+        <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
+          show {showAll ? "important" : "all"}
+        </Button>
+      </div>
 
-      <Button
-        variant="secondary"
-        className="my-2"
-        onClick={() => setShowAll(!showAll)}
-      >
-        show {showAll ? "important" : "all"}
-      </Button>
-
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2 mt-4">
         {notesToShow.map((note) => (
           <Note
             key={note.id}

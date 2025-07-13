@@ -10,6 +10,7 @@ export interface Credentials {
 }
 
 export interface INote {
+  title: ReactNode;
   id: string;
   content: string;
   createdAt: string;
