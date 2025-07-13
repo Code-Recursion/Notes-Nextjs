@@ -10,6 +10,7 @@ export interface Credentials {
 }
 
 export interface INote {
+  title: string;
   id: string;
   content: string;
   createdAt: string;
