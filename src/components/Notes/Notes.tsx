@@ -24,7 +24,6 @@ const Notes: React.FC = () => {
   const [showAll, setShowAll] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [invalidNote, setInvalidNote] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
   const [addEditModalOpen, setAddEditModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<NoteFormValues | null>(null);
@@ -250,7 +249,6 @@ const Notes: React.FC = () => {
 
       <AlertBox type="error" message={errorMessage} />
       <AlertBox type="success" message={successMessage} />
-      <AlertBox type="warning" message={invalidNote} />
 
       <AddEditNoteModal
         noteData={noteToEdit}
