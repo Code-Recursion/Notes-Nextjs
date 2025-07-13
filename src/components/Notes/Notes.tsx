@@ -23,6 +23,7 @@ import Star from "@/assets/star";
 import EditIcon from "@/assets/EditIcon";
 import DeleteIcon from "@/assets/DeleteIcon";
 import { Separator } from "../ui/separator";
+import Confirm from "../Confirm/Confirm";
 
 interface UserType {
   userId: string;
@@ -40,6 +41,8 @@ const Notes: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<INote | null>(null);
+  const [isConfirmOpen, setIsOpenConfirm] = useState<boolean>(false);
+  const [noteToDelete, setNoteToDelete] = useState<string>("");
 
   // Set user on initial mount
   useEffect(() => {
@@ -121,6 +124,7 @@ const Notes: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!id) return;
     noteService
       .remove(id)
       .then(() => {
@@ -153,6 +157,21 @@ const Notes: React.FC = () => {
   };
 
   const notesToShow = showAll ? notes : notes.filter((n) => n.important);
+
+  const renderNoteTimestamp = (createdAt: string, updatedAt: string) => {
+    const created = new Date(createdAt);
+    const updated = new Date(updatedAt);
+
+    const isUpdated = created.getTime() !== updated.getTime();
+
+    return (
+      <div className="mt-2 text-xs text-muted-foreground self-end">
+        {isUpdated
+          ? `Updated: ${updated.toDateString()}`
+          : `Created: ${created.toDateString()}`}
+      </div>
+    );
+  };
 
   const Note: React.FC<{
     note: INote;
@@ -192,9 +211,7 @@ const Notes: React.FC = () => {
             <div className="flex items-center">{note.content}</div>
           </div>
         </div>
-        <div className="mt-2 text-xs text-muted-foreground self-end">
-          Created: {new Date(note.createdAt).toDateString()}
-        </div>
+        {renderNoteTimestamp(note.createdAt, note.updatedAt)}
       </div>
     );
   };
@@ -377,6 +394,16 @@ const Notes: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      <Confirm
+        isOpen={isConfirmOpen}
+        handleClose={() => setIsOpenConfirm(false)}
+        onConfirm={() => handleDelete(noteToDelete)}
+        onCancel={() => setIsOpenConfirm(false)}
+        title="Delete this note?"
+        description="This note will be permanently removed. Are you sure?"
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
       <form className="flex gap-2" onSubmit={addUserNote}>
         <Input value={newNote} onChange={handleNewNote} />
         <Button>save</Button>
@@ -400,7 +427,10 @@ const Notes: React.FC = () => {
             key={note.id}
             note={note}
             toggleImportance={toggleImportanceOf}
-            handleDelete={() => handleDelete(note.id)}
+            handleDelete={() => {
+              setNoteToDelete(note.id);
+              setIsOpenConfirm(true);
+            }}
             handleEditClick={() => handleEditClick(note)}
           />
         ))}

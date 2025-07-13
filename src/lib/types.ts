@@ -16,4 +16,5 @@ export interface INote {
   createdAt: string;
   important: boolean;
   user: string;
+  updatedAt: string;
 }
