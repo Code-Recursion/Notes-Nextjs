@@ -10,6 +10,7 @@ import { Separator } from "../ui/separator";
 import Confirm from "../Confirm/Confirm";
 import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
 import { toast } from "sonner";
+import { Skeleton } from "../ui/skeleton";
 
 interface UserType {
   userId: string;
@@ -29,6 +30,7 @@ const Notes: React.FC = () => {
   const [noteModalType, setNoteModalType] = useState<string>("CREATE");
   const [isConfirmOpen, setIsOpenConfirm] = useState<boolean>(false);
   const [noteToDelete, setNoteToDelete] = useState<string>("");
+  const [loader, setLoader] = useState<boolean>(false);
 
   // Set user on initial mount
   useEffect(() => {
@@ -42,42 +44,35 @@ const Notes: React.FC = () => {
   // Fetch notes once user is available
   useEffect(() => {
     if (user) {
-      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
+      setLoader(true);
+      noteService
+        .getAll(user.userId)
+        .then((data: INote[]) => {
+          setNotes(data);
+          setLoader(false);
+        })
+        .catch(() => {
+          toast.error("Failed to fetch notes.");
+          setLoader(false);
+        });
     }
   }, [user]);
 
   const fetchUserNotes = () => {
     if (user) {
-      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
+      setLoader(true);
+      noteService
+        .getAll(user.userId)
+        .then((data: INote[]) => {
+          setNotes(data);
+          setLoader(false);
+        })
+        .catch(() => {
+          toast.error("Failed to fetch notes.");
+          setLoader(false);
+        });
     }
   };
-
-  // const addUserNote = async (noteData: NoteFormValues) => {
-  //   if (!user) return;
-  //   const noteObj = {
-  //     user: user.userId,
-  //     title: noteData.title,
-  //     content: noteData.content,
-  //     important: noteData.important,
-  //   };
-
-  //   try {
-  //     let note: INote;
-  //     if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
-  //       note = await noteService.create(noteObj);
-  //     } else {
-  //       await noteService.update(noteToEdit.id, noteToEdit);
-  //     }
-  //     setNotes((prev) => [...prev, note]);
-  //     setSuccessMessage(`Note: "${noteData.title}" added`);
-  //     setTimeout(() => setSuccessMessage(null), 5000);
-  //     fetchUserNotes();
-  //   } catch (error) {
-  //     toast.error("Note creation failed!");
-  //     console.log("error", error);
-  //     setTimeout(() => toast.error(null), 5000);
-  //   }
-  // };
 
   const addUserNote = async (noteData: NoteFormValues) => {
     if (!user) return;
@@ -88,12 +83,13 @@ const Notes: React.FC = () => {
       content: noteData.content,
       important: noteData.important,
     };
-
+    setLoader(true);
     try {
       if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
         const newNote = await noteService.create(noteObj);
         setNotes((prev) => [...prev, newNote]);
         toast.success(`Note: "${noteData.title}" added`);
+        setLoader(false);
       } else if (noteToEdit && "id" in noteToEdit) {
         const updatedNote = await noteService.update(noteToEdit.id, noteObj);
         setNotes((prev) =>
@@ -107,6 +103,7 @@ const Notes: React.FC = () => {
     } finally {
       setNoteToEdit(null);
       fetchUserNotes();
+      setLoader(false);
     }
   };
 
@@ -249,6 +246,7 @@ const Notes: React.FC = () => {
         description="This note will be permanently removed. Are you sure?"
         confirmText="Delete"
         cancelText="Cancel"
+        isLoading={loader}
       />
       <div className="flex gap-4 my-4">
         <Button variant="default" onClick={handleAddNoteCTA} type="button">
@@ -260,19 +258,58 @@ const Notes: React.FC = () => {
       </div>
 
       <ul className="flex flex-col gap-2 mt-4">
-        {notesToShow.map((note) => (
-          <Note
-            key={note.id}
-            note={note}
-            toggleImportance={toggleImportanceOf}
-            handleDelete={() => {
-              setNoteToDelete(note.id);
-              setIsOpenConfirm(true);
-            }}
-            handleEditClick={() => handleEditClick(note)}
-          />
-        ))}
+        {loader &&
+          [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
+        {!loader &&
+          notesToShow.map((note) => (
+            <Note
+              key={note.id}
+              note={note}
+              toggleImportance={toggleImportanceOf}
+              handleDelete={() => {
+                setNoteToDelete(note.id);
+                setIsOpenConfirm(true);
+              }}
+              handleEditClick={() => handleEditClick(note)}
+            />
+          ))}
       </ul>
+    </div>
+  );
+};
+
+const NoteSkeleton = () => {
+  return (
+    <div className="flex items-center !p-[16px] space-x-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[250px]" />
+        <Skeleton className="h-4 w-[200px]" />
+      </div>
+    </div>
+  );
+};
+const NoteSkeletonDetailed = () => {
+  return (
+    <div className="flex items-center space-x-4 !p-[16px] border-solid border rounded-md">
+      {/* <Skeleton className="h-12 w-12 rounded-full" /> */}
+      <div className="flex justify-between gap-[16px] w-full">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[80px]" />
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[200px]" />
+        </div>
+        <div className="flex flex-col justify-between">
+          <div className="flex gap-[8px]">
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+          </div>
+          <div>
+            <Skeleton className="h-4 w-[80px] mt-[8px]" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
