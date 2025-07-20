@@ -6,6 +6,7 @@ import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
 import Navbar from "@/components/Navbar";
 import { Credentials, UserType } from "@/lib/types";
+import { Toaster } from "sonner";
 
 export default function Home() {
   const [user, setUser] = useState<UserType | null>(null);
@@ -60,6 +61,7 @@ export default function Home() {
   return (
     <>
       <Navbar user={user} />
+      <Toaster closeButton duration={3000} expand />
       {errorMessage && <div>{errorMessage}</div>}
       {user === null ? (
         showLogin ? (

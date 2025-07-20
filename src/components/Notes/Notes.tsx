@@ -9,6 +9,7 @@ import DeleteIcon from "@/assets/DeleteIcon";
 import { Separator } from "../ui/separator";
 import Confirm from "../Confirm/Confirm";
 import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
+import { toast } from "sonner";
 
 interface UserType {
   userId: string;
@@ -22,8 +23,6 @@ const NOTE_MODAL_TYPE = {
 const Notes: React.FC = () => {
   const [notes, setNotes] = useState<INote[]>([]);
   const [showAll, setShowAll] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
   const [addEditModalOpen, setAddEditModalOpen] = useState<boolean>(false);
   const [noteToEdit, setNoteToEdit] = useState<NoteFormValues | null>(null);
@@ -74,9 +73,9 @@ const Notes: React.FC = () => {
   //     setTimeout(() => setSuccessMessage(null), 5000);
   //     fetchUserNotes();
   //   } catch (error) {
-  //     setErrorMessage("Note creation failed!");
+  //     toast.error("Note creation failed!");
   //     console.log("error", error);
-  //     setTimeout(() => setErrorMessage(null), 5000);
+  //     setTimeout(() => toast.error(null), 5000);
   //   }
   // };
 
@@ -94,19 +93,17 @@ const Notes: React.FC = () => {
       if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
         const newNote = await noteService.create(noteObj);
         setNotes((prev) => [...prev, newNote]);
-        setSuccessMessage(`Note: "${noteData.title}" added`);
+        toast.success(`Note: "${noteData.title}" added`);
       } else if (noteToEdit && "id" in noteToEdit) {
         const updatedNote = await noteService.update(noteToEdit.id, noteObj);
         setNotes((prev) =>
           prev.map((n) => (n.id === noteToEdit.id ? updatedNote : n))
         );
-        setSuccessMessage(`Note: "${noteData.title}" updated`);
+        toast.info(`Note: "${noteData.title}" updated`);
       }
-      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
-      setErrorMessage("Note operation failed!");
+      toast.error("Note operation failed!");
       console.log("error", error);
-      setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setNoteToEdit(null);
       fetchUserNotes();
@@ -125,8 +122,7 @@ const Notes: React.FC = () => {
         setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)))
       )
       .catch(() => {
-        setErrorMessage("Failed to toggle importance");
-        setTimeout(() => setErrorMessage(null), 5000);
+        toast.error("Failed to toggle importance");
       });
     fetchUserNotes();
   };
@@ -137,12 +133,10 @@ const Notes: React.FC = () => {
       .remove(id)
       .then(() => {
         fetchUserNotes();
-        setSuccessMessage("Note deleted!");
-        setTimeout(() => setSuccessMessage(null), 5000);
+        toast.success("Note deleted!");
       })
       .catch(() => {
-        setErrorMessage("Note was already deleted from server");
-        setTimeout(() => setErrorMessage(null), 5000);
+        toast.error("Note was already deleted from server!");
       });
   };
 
@@ -160,8 +154,8 @@ const Notes: React.FC = () => {
   //     await noteService.update(noteToEdit.id, noteToEdit);
   //     fetchUserNotes();
   //   } catch {
-  //     setErrorMessage("Update failed");
-  //     setTimeout(() => setErrorMessage(null), 5000);
+  //     toast.error("Update failed");
+  //     setTimeout(() => toast.error(null), 5000);
   //   }
   // };
 
@@ -229,15 +223,6 @@ const Notes: React.FC = () => {
     );
   };
 
-  const AlertBox: React.FC<{
-    type: "error" | "success" | "warning";
-    message: string | null;
-  }> = ({ type, message }) =>
-    message ? (
-      <div className={`${type}`}>
-        <p>{message}</p>
-      </div>
-    ) : null;
   const handleAddNoteCTA = () => {
     setNoteModalType(NOTE_MODAL_TYPE.CREATE);
     setAddEditModalOpen(true);
@@ -246,9 +231,6 @@ const Notes: React.FC = () => {
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
-
-      <AlertBox type="error" message={errorMessage} />
-      <AlertBox type="success" message={successMessage} />
 
       <AddEditNoteModal
         noteData={noteToEdit}
