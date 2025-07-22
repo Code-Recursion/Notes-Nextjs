@@ -10,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import EyeSlashIcon from "@/assets/EyeSlashIcon";
+import EyeIcon from "@/assets/EyeIcon";
 
 type RegisterFormProps = {
   handleRegister: (credentials: {
@@ -27,6 +29,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,6 +38,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     setUsername("");
     setName("");
     setPassword("");
+    setRepeatPassword("");
   };
 
   return (
@@ -67,13 +72,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <div
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-[8px] top-[4px]"
+                >
+                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Repeat Password</Label>
+              <div className="relative">
+                <Input
+                  id="repeat-password"
+                  type={showPassword ? "text" : "password"}
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                  required
+                />
+                <div
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-[8px] top-[4px]"
+                >
+                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                </div>
+              </div>
             </div>
             <CardFooter className="flex-col gap-2">
               <Button type="submit" className="w-full">

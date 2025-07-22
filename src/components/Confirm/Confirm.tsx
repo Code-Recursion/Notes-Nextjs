@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { LoaderIcon } from "lucide-react";
 
 type ConfirmProps = {
   isOpen: boolean;
@@ -18,6 +19,7 @@ type ConfirmProps = {
   description?: string;
   confirmText?: string;
   cancelText?: string;
+  isLoading: boolean;
 };
 
 const Confirm = ({
@@ -29,6 +31,7 @@ const Confirm = ({
   description = "This action cannot be undone.",
   confirmText = "Continue",
   cancelText = "Cancel",
+  isLoading = "false",
 }: ConfirmProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={handleClose}>
@@ -40,7 +43,7 @@ const Confirm = ({
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            {confirmText}
+            {confirmText} {isLoading && <LoaderIcon />}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

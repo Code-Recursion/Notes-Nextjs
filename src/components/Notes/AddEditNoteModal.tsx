@@ -18,8 +18,8 @@ import { z } from "zod";
 
 // Zod schema and inferred type
 const noteSchema = z.object({
-  title: z.string().min(1, "Note Title is required"),
-  content: z.string().min(1, "Note Content is required"),
+  title: z.string().min(5, "Note Title must be at least 5 characters"),
+  content: z.string().min(5, "Note Content must be at least 5 characters"),
   important: z.boolean(),
 });
 

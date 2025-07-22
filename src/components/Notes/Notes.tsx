@@ -9,11 +9,22 @@ import DeleteIcon from "@/assets/DeleteIcon";
 import { Separator } from "../ui/separator";
 import Confirm from "../Confirm/Confirm";
 import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
+import { toast } from "sonner";
+import { Skeleton } from "../ui/skeleton";
 
 interface UserType {
   userId: string;
   name?: string;
 }
+
+interface LoadingStates {
+  [noteId: string]: {
+    toggleImportance?: boolean;
+    delete?: boolean;
+    edit?: boolean;
+  };
+}
+
 const NOTE_MODAL_TYPE = {
   CREATE: "CREATE",
   EDIT: "EDIT",
@@ -22,14 +33,17 @@ const NOTE_MODAL_TYPE = {
 const Notes: React.FC = () => {
   const [notes, setNotes] = useState<INote[]>([]);
   const [showAll, setShowAll] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
   const [addEditModalOpen, setAddEditModalOpen] = useState<boolean>(false);
-  const [noteToEdit, setNoteToEdit] = useState<NoteFormValues | null>(null);
+  const [noteToEdit, setNoteToEdit] = useState<
+    (NoteFormValues & { id?: string }) | null
+  >(null);
   const [noteModalType, setNoteModalType] = useState<string>("CREATE");
   const [isConfirmOpen, setIsOpenConfirm] = useState<boolean>(false);
   const [noteToDelete, setNoteToDelete] = useState<string>("");
+  const [initialLoader, setInitialLoader] = useState<boolean>(false);
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
+  const [isCreatingNote, setIsCreatingNote] = useState<boolean>(false);
 
   // Set user on initial mount
   useEffect(() => {
@@ -43,42 +57,33 @@ const Notes: React.FC = () => {
   // Fetch notes once user is available
   useEffect(() => {
     if (user) {
-      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
+      setInitialLoader(true);
+      noteService
+        .getAll(user.userId)
+        .then((data: INote[]) => {
+          setNotes(data);
+          setInitialLoader(false);
+        })
+        .catch(() => {
+          toast.error("Failed to fetch notes.");
+          setInitialLoader(false);
+        });
     }
   }, [user]);
 
-  const fetchUserNotes = () => {
-    if (user) {
-      noteService.getAll(user.userId).then((data: INote[]) => setNotes(data));
-    }
+  const setNoteLoading = (
+    noteId: string,
+    operation: "toggleImportance" | "delete" | "edit",
+    loading: boolean
+  ) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      [noteId]: {
+        ...prev[noteId],
+        [operation]: loading,
+      },
+    }));
   };
-
-  // const addUserNote = async (noteData: NoteFormValues) => {
-  //   if (!user) return;
-  //   const noteObj = {
-  //     user: user.userId,
-  //     title: noteData.title,
-  //     content: noteData.content,
-  //     important: noteData.important,
-  //   };
-
-  //   try {
-  //     let note: INote;
-  //     if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
-  //       note = await noteService.create(noteObj);
-  //     } else {
-  //       await noteService.update(noteToEdit.id, noteToEdit);
-  //     }
-  //     setNotes((prev) => [...prev, note]);
-  //     setSuccessMessage(`Note: "${noteData.title}" added`);
-  //     setTimeout(() => setSuccessMessage(null), 5000);
-  //     fetchUserNotes();
-  //   } catch (error) {
-  //     setErrorMessage("Note creation failed!");
-  //     console.log("error", error);
-  //     setTimeout(() => setErrorMessage(null), 5000);
-  //   }
-  // };
 
   const addUserNote = async (noteData: NoteFormValues) => {
     if (!user) return;
@@ -92,58 +97,60 @@ const Notes: React.FC = () => {
 
     try {
       if (noteModalType === NOTE_MODAL_TYPE.CREATE) {
+        setIsCreatingNote(true);
         const newNote = await noteService.create(noteObj);
-        setNotes((prev) => [...prev, newNote]);
-        setSuccessMessage(`Note: "${noteData.title}" added`);
-      } else if (noteToEdit && "id" in noteToEdit) {
+        setNotes((prev) => [newNote, ...prev]);
+        toast.success(`Note: "${noteData.title}" added`);
+      } else if (noteToEdit && noteToEdit.id) {
+        setNoteLoading(noteToEdit.id, "edit", true);
         const updatedNote = await noteService.update(noteToEdit.id, noteObj);
         setNotes((prev) =>
           prev.map((n) => (n.id === noteToEdit.id ? updatedNote : n))
         );
-        setSuccessMessage(`Note: "${noteData.title}" updated`);
+        toast.info(`Note: "${noteData.title}" updated`);
       }
-      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
-      setErrorMessage("Note operation failed!");
+      toast.error("Note operation failed!");
       console.log("error", error);
-      setTimeout(() => setErrorMessage(null), 5000);
     } finally {
+      if (noteToEdit && noteToEdit.id) {
+        setNoteLoading(noteToEdit.id, "edit", false);
+      }
+      setIsCreatingNote(false);
       setNoteToEdit(null);
-      fetchUserNotes();
     }
   };
 
-  const toggleImportanceOf = (id: string) => {
+  const toggleImportanceOf = async (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
 
     const changedNote = { ...note, important: !note.important };
+    setNoteLoading(id, "toggleImportance", true);
 
-    noteService
-      .update(id, changedNote)
-      .then((updated) =>
-        setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)))
-      )
-      .catch(() => {
-        setErrorMessage("Failed to toggle importance");
-        setTimeout(() => setErrorMessage(null), 5000);
-      });
-    fetchUserNotes();
+    try {
+      const updated = await noteService.update(id, changedNote);
+      setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)));
+    } catch {
+      toast.error("Failed to toggle importance");
+    } finally {
+      setNoteLoading(id, "toggleImportance", false);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!id) return;
-    noteService
-      .remove(id)
-      .then(() => {
-        fetchUserNotes();
-        setSuccessMessage("Note deleted!");
-        setTimeout(() => setSuccessMessage(null), 5000);
-      })
-      .catch(() => {
-        setErrorMessage("Note was already deleted from server");
-        setTimeout(() => setErrorMessage(null), 5000);
-      });
+
+    setNoteLoading(id, "delete", true);
+    try {
+      await noteService.remove(id);
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+      toast.success("Note deleted!");
+    } catch {
+      toast.error("Note was already deleted from server!");
+    } finally {
+      setNoteLoading(id, "delete", false);
+    }
   };
 
   const handleEditClick = (note: INote) => {
@@ -151,19 +158,6 @@ const Notes: React.FC = () => {
     setNoteModalType(NOTE_MODAL_TYPE.EDIT);
     setNoteToEdit(note);
   };
-
-  // const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-  //   if (!noteToEdit) return;
-  //   setEditModalOpen(false);
-  //   try {
-  //     await noteService.update(noteToEdit.id, noteToEdit);
-  //     fetchUserNotes();
-  //   } catch {
-  //     setErrorMessage("Update failed");
-  //     setTimeout(() => setErrorMessage(null), 5000);
-  //   }
-  // };
 
   const notesToShow = showAll ? notes : notes.filter((n) => n.important);
 
@@ -187,8 +181,21 @@ const Notes: React.FC = () => {
     toggleImportance: (id: string) => void;
     handleDelete: () => void;
     handleEditClick: () => void;
-  }> = ({ note, toggleImportance, handleDelete, handleEditClick }) => {
+    isLoading: boolean;
+  }> = ({
+    note,
+    toggleImportance,
+    handleDelete,
+    handleEditClick,
+    isLoading,
+  }) => {
     const Logo = note.important ? <StarFilled /> : <Star />;
+    const noteLoadingState = loadingStates[note.id] || {};
+
+    if (isLoading) {
+      return <NoteSkeletonDetailed />;
+    }
+
     return (
       <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
@@ -200,23 +207,38 @@ const Notes: React.FC = () => {
               <div className="flex items-center gap-3 text-muted-foreground">
                 <button
                   onClick={() => toggleImportance(note.id)}
-                  className="hover:text-yellow-300 cursor-pointer"
+                  className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={noteLoadingState.toggleImportance}
                 >
-                  {Logo}
+                  {noteLoadingState.toggleImportance ? (
+                    <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    Logo
+                  )}
                 </button>
                 <button
                   onClick={handleEditClick}
-                  className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors"
-                  aria-label="Delete note"
+                  className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Edit note"
+                  disabled={noteLoadingState.edit}
                 >
-                  <EditIcon />
+                  {noteLoadingState.edit ? (
+                    <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <EditIcon />
+                  )}
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors"
+                  className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Delete note"
+                  disabled={noteLoadingState.delete}
                 >
-                  <DeleteIcon />
+                  {noteLoadingState.delete ? (
+                    <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <DeleteIcon />
+                  )}
                 </button>
               </div>
             </div>
@@ -229,26 +251,15 @@ const Notes: React.FC = () => {
     );
   };
 
-  const AlertBox: React.FC<{
-    type: "error" | "success" | "warning";
-    message: string | null;
-  }> = ({ type, message }) =>
-    message ? (
-      <div className={`${type}`}>
-        <p>{message}</p>
-      </div>
-    ) : null;
   const handleAddNoteCTA = () => {
     setNoteModalType(NOTE_MODAL_TYPE.CREATE);
     setAddEditModalOpen(true);
     setNoteToEdit(null);
   };
+
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
-
-      <AlertBox type="error" message={errorMessage} />
-      <AlertBox type="success" message={successMessage} />
 
       <AddEditNoteModal
         noteData={noteToEdit}
@@ -267,10 +278,23 @@ const Notes: React.FC = () => {
         description="This note will be permanently removed. Are you sure?"
         confirmText="Delete"
         cancelText="Cancel"
+        isLoading={loadingStates[noteToDelete]?.delete || false}
       />
       <div className="flex gap-4 my-4">
-        <Button variant="default" onClick={handleAddNoteCTA} type="button">
-          Add Note
+        <Button
+          variant="default"
+          onClick={handleAddNoteCTA}
+          type="button"
+          disabled={isCreatingNote}
+        >
+          {isCreatingNote ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Creating...
+            </div>
+          ) : (
+            "Add Note"
+          )}
         </Button>
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
@@ -278,19 +302,60 @@ const Notes: React.FC = () => {
       </div>
 
       <ul className="flex flex-col gap-2 mt-4">
-        {notesToShow.map((note) => (
-          <Note
-            key={note.id}
-            note={note}
-            toggleImportance={toggleImportanceOf}
-            handleDelete={() => {
-              setNoteToDelete(note.id);
-              setIsOpenConfirm(true);
-            }}
-            handleEditClick={() => handleEditClick(note)}
-          />
-        ))}
+        {initialLoader &&
+          [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
+        {isCreatingNote && <NoteSkeletonDetailed />}
+        {!initialLoader &&
+          notesToShow.map((note) => (
+            <Note
+              key={note.id}
+              note={note}
+              toggleImportance={toggleImportanceOf}
+              handleDelete={() => {
+                setNoteToDelete(note.id);
+                setIsOpenConfirm(true);
+              }}
+              handleEditClick={() => handleEditClick(note)}
+              isLoading={false}
+            />
+          ))}
       </ul>
+    </div>
+  );
+};
+
+const NoteSkeleton = () => {
+  return (
+    <div className="flex items-center !p-[16px] space-x-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[250px]" />
+        <Skeleton className="h-4 w-[200px]" />
+      </div>
+    </div>
+  );
+};
+const NoteSkeletonDetailed = () => {
+  return (
+    <div className="flex items-center space-x-4 !p-[16px] border-solid border rounded-md">
+      {/* <Skeleton className="h-12 w-12 rounded-full" /> */}
+      <div className="flex justify-between gap-[16px] w-full">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[80px]" />
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[200px]" />
+        </div>
+        <div className="flex flex-col justify-between">
+          <div className="flex gap-[8px]">
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+            <Skeleton className="h-4 w-[20px] rounded-full" />
+          </div>
+          <div>
+            <Skeleton className="h-4 w-[80px] mt-[8px]" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

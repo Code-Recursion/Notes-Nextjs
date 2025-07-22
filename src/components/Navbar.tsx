@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   };
 
   return (
-    <div className="flex justify-between md:w-[60vw] md:mx-auto mx-[8px] py-[8px] items-center">
+    <div className="flex justify-between md:w-[60vw] md:mx-auto mx-[8px] py-[16px] items-center">
       {user ? (
         <NavigationMenuItem className="list-none">
           <DropdownMenu>
@@ -35,7 +35,12 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="mt-2">
-              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={handleLogout}
+              >
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </NavigationMenuItem>
