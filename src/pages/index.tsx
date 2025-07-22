@@ -6,12 +6,12 @@ import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
 import Navbar from "@/components/Navbar";
 import { Credentials, UserType } from "@/lib/types";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 
 export default function Home() {
   const [user, setUser] = useState<UserType | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
@@ -22,20 +22,22 @@ export default function Home() {
   }, []);
 
   const handleLogin = async (credentials: Credentials) => {
+    setIsAuthLoading(true);
     try {
       const user: UserType = await loginService.login(credentials);
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       setUser(user);
+      toast.success(`Logged in successfully!`);
     } catch (exception) {
       console.log("erro while logging in", exception);
-      setErrorMessage("Wrong credentials");
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      toast.error(`${exception?.response?.data?.error}`);
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
   const handleRegister = async (credentials: Credentials) => {
+    setIsAuthLoading(true);
     try {
       await userService.register(credentials);
       const user: UserType = await loginService.login({
@@ -44,34 +46,34 @@ export default function Home() {
       });
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       setUser(user);
+      toast.success(`Registered successfully!`);
     } catch (exception) {
-      setErrorMessage("Registration failed");
       console.log("exception.response?.data?.error", exception);
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      toast.error(`Error while logging in!, ${exception?.message}`);
+    } finally {
+      setIsAuthLoading(true);
     }
   };
 
   const toggleForm = () => {
     setShowLogin(!showLogin);
-    setErrorMessage(null);
   };
 
   return (
     <>
       <Navbar user={user} />
       <Toaster closeButton duration={3000} expand />
-      {errorMessage && <div>{errorMessage}</div>}
       {user === null ? (
-        showLogin ? (
-          <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
-        ) : (
-          <RegisterForm
-            handleRegister={handleRegister}
-            toggleForm={toggleForm}
-          />
-        )
+        <div className="p-[16px] md:p-0">
+          {showLogin ? (
+            <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
+          ) : (
+            <RegisterForm
+              handleRegister={handleRegister}
+              toggleForm={toggleForm}
+            />
+          )}
+        </div>
       ) : (
         <Notes />
       )}

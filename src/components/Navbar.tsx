@@ -35,7 +35,12 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="mt-2">
-              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={handleLogout}
+              >
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </NavigationMenuItem>
