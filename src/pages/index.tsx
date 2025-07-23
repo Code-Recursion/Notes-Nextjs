@@ -1,25 +1,17 @@
 import { useEffect, useState } from "react";
 import loginService from "../services/loginService";
 import userService from "../services/userService";
-import Notes from "@/components/Notes/Notes";
 import RegisterForm from "@/components/Login/RegisterForm";
 import LoginForm from "@/components/Login/LoginForm";
-import Navbar from "@/components/Navbar";
 import { Credentials, UserType } from "@/lib/types";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
+import { useRouter } from "next/router";
 
 export default function Home() {
   const [user, setUser] = useState<UserType | null>(null);
   const [showLogin, setShowLogin] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
-    if (loggedUserJSON) {
-      const user: UserType = JSON.parse(loggedUserJSON);
-      setUser(user);
-    }
-  }, []);
+  const router = useRouter();
 
   const handleLogin = async (credentials: Credentials) => {
     setIsAuthLoading(true);
@@ -28,6 +20,7 @@ export default function Home() {
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       setUser(user);
       toast.success(`Logged in successfully!`);
+      router.push("/notes");
     } catch (exception) {
       console.log("erro while logging in", exception);
       toast.error(`${exception?.response?.data?.error}`);
@@ -43,13 +36,17 @@ export default function Home() {
       const user: UserType = await loginService.login({
         username: credentials.username,
         password: credentials.password,
+        name: credentials.name,
       });
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       setUser(user);
       toast.success(`Registered successfully!`);
+      router.push("/notes");
     } catch (exception) {
       console.log("exception.response?.data?.error", exception);
-      toast.error(`Error while logging in!, ${exception?.message}`);
+      toast.error(
+        `Error while logging in!, ${exception?.response?.data?.error}`
+      );
     } finally {
       setIsAuthLoading(true);
     }
@@ -61,22 +58,16 @@ export default function Home() {
 
   return (
     <>
-      <Navbar user={user} />
-      <Toaster closeButton duration={3000} expand />
-      {user === null ? (
-        <div className="p-[16px] md:p-0">
-          {showLogin ? (
-            <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
-          ) : (
-            <RegisterForm
-              handleRegister={handleRegister}
-              toggleForm={toggleForm}
-            />
-          )}
-        </div>
-      ) : (
-        <Notes />
-      )}
+      <div className="p-[16px] md:p-0">
+        {showLogin ? (
+          <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
+        ) : (
+          <RegisterForm
+            handleRegister={handleRegister}
+            toggleForm={toggleForm}
+          />
+        )}
+      </div>
     </>
   );
 }
