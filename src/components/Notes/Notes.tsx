@@ -11,7 +11,15 @@ import Confirm from "../Confirm/Confirm";
 import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
 import { toast } from "sonner";
 import { Skeleton } from "../ui/skeleton";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 interface UserType {
   userId: string;
   name?: string;
@@ -44,12 +52,25 @@ const Notes: React.FC = () => {
   const [initialLoader, setInitialLoader] = useState<boolean>(false);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
   const [isCreatingNote, setIsCreatingNote] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState({
+    value: "createdAt",
+    text: "Created Date",
+  });
+
+  const handleDropDownChange = (val: string) => {
+    console.log("selected", val);
+    if (val === "createdAt") {
+      setSortBy({ value: "createdAt", text: "Created Date" });
+    } else if (val === "updatedAt") {
+      setSortBy({ value: "updatedAt", text: "Last Updated" });
+    }
+  };
 
   const fetchUserNotes = useCallback(() => {
+    console.log("");
     if (user) {
-      console.log("user", user);
       noteService
-        .getAll(user?.userId)
+        .getAll(user?.userId, sortBy.value)
         .then((data: INote[]) => {
           setNotes(data);
           setInitialLoader(false);
@@ -59,7 +80,7 @@ const Notes: React.FC = () => {
           setInitialLoader(false);
         });
     }
-  }, [user]);
+  }, [user, sortBy]);
 
   useEffect(() => {
     const userData = window?.localStorage?.getItem("loggedNoteappUser");
@@ -263,6 +284,31 @@ const Notes: React.FC = () => {
     setNoteToEdit(null);
   };
 
+  const FilterNotes = () => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">Sort By : {sortBy.text}</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          <DropdownMenuLabel>Sort Notes By</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={sortBy.value}
+            onValueChange={handleDropDownChange}
+          >
+            <DropdownMenuRadioItem value="createdAt">
+              Created Date
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="updatedAt">
+              Last Updated
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   return (
     <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
@@ -305,6 +351,7 @@ const Notes: React.FC = () => {
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
         </Button>
+        <FilterNotes />
       </div>
 
       <ul className="flex flex-col gap-2 mt-4">
