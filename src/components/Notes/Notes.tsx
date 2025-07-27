@@ -226,7 +226,7 @@ const Notes: React.FC = () => {
     const isUpdated = created.getTime() !== updated.getTime();
 
     return (
-      <div className="mt-2 text-xs text-muted-foreground self-end">
+      <div className="text-xs text-muted-foreground">
         {isUpdated
           ? `Updated: ${updated.toDateString()}`
           : `Created: ${created.toDateString()}`}
@@ -247,7 +247,11 @@ const Notes: React.FC = () => {
     handleEditClick,
     isLoading,
   }) => {
-    const Logo = note.important ? <StarFilled /> : <Star />;
+    const Logo = note.important ? (
+      <StarFilled className="size-4" />
+    ) : (
+      <Star className="size-4" />
+    );
     const noteLoadingState = loadingStates[note.id] || {};
 
     if (isLoading) {
@@ -255,50 +259,13 @@ const Notes: React.FC = () => {
     }
 
     return (
-      <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
+      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between">
               <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <button
-                  onClick={() => toggleImportance(note.id)}
-                  className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={noteLoadingState.toggleImportance}
-                >
-                  {noteLoadingState.toggleImportance ? (
-                    <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    Logo
-                  )}
-                </button>
-                <button
-                  onClick={handleEditClick}
-                  className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Edit note"
-                  disabled={noteLoadingState.edit}
-                >
-                  {noteLoadingState.edit ? (
-                    <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <EditIcon />
-                  )}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Delete note"
-                  disabled={noteLoadingState.delete}
-                >
-                  {noteLoadingState.delete ? (
-                    <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <DeleteIcon />
-                  )}
-                </button>
-              </div>
             </div>
             <Separator className="w-full my-2" />
             <div className="flex items-center">
@@ -306,7 +273,46 @@ const Notes: React.FC = () => {
             </div>
           </div>
         </div>
-        {renderNoteTimestamp(note.createdAt, note.updatedAt)}
+        <div className="left-0 px-[12px] py-[8px] items-center justify-between w-full flex absolute bottom-0 text-muted-foreground">
+          <div className="flex gap-[8px]">
+            <button
+              onClick={() => toggleImportance(note.id)}
+              className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={noteLoadingState.toggleImportance}
+            >
+              {noteLoadingState.toggleImportance ? (
+                <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                Logo
+              )}
+            </button>
+            <button
+              onClick={handleEditClick}
+              className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Edit note"
+              disabled={noteLoadingState.edit}
+            >
+              {noteLoadingState.edit ? (
+                <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <EditIcon className="size-4" />
+              )}
+            </button>
+            <button
+              onClick={handleDelete}
+              className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Delete note"
+              disabled={noteLoadingState.delete}
+            >
+              {noteLoadingState.delete ? (
+                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <DeleteIcon className="size-4" />
+              )}
+            </button>
+          </div>
+          {renderNoteTimestamp(note.createdAt, note.updatedAt)}
+        </div>
       </div>
     );
   };
@@ -408,7 +414,7 @@ const Notes: React.FC = () => {
         <FilterNotes />
       </div>
 
-      <ul className="flex flex-col gap-2 mt-4">
+      <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4">
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
