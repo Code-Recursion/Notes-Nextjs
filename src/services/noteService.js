@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // This URL will be dynamically set depending on environm
-const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notes`;
+const baseUrl = `${process.env.NEXT_PUBLIC_API_VERCEL_BE_BASE_URL}/api/notes`;
 
 let token = null;
 
