@@ -1,10 +1,7 @@
 import axios from "axios";
 
-// This URL will be dynamically set depending on environment
+// This URL will be dynamically set depending on environm
 const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notes`;
-
-// const baseUrl = "/api/notes";
-// const baseUrl = "https://notes-be-dw7g.onrender.com/api/notes";
 
 let token = null;
 
@@ -12,20 +9,14 @@ const setToken = (newToken) => {
   token = `bearer ${newToken}`;
 };
 
-// const addNote = async (data) => {
-//   const config = {
-//     headers: { Authorization: token },
-//   };
-
-//   const response = await axios.post(baseUrl, data, config);
-//   return response.data;
-// };
-
-const getAll = (userId) => {
+const getAll = (userId, sortBy) => {
   const config = {
     headers: { Authorization: token },
   };
-  const request = axios.get(baseUrl + "/user/" + userId, config);
+  const request = axios.get(
+    `${baseUrl}/user/${userId}?sortBy=${sortBy}`,
+    config
+  );
   return request.then((res) => res.data);
 };
 

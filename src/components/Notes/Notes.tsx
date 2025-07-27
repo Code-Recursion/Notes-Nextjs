@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import noteService from "@/services/noteService";
 import { Button } from "@/components/ui/button";
 import { INote } from "@/lib/types";
@@ -11,7 +11,17 @@ import Confirm from "../Confirm/Confirm";
 import AddEditNoteModal, { NoteFormValues } from "./AddEditNoteModal";
 import { toast } from "sonner";
 import { Skeleton } from "../ui/skeleton";
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "../ui/input";
+import ClearIcon from "@/assets/ClearIcon";
 interface UserType {
   userId: string;
   name?: string;
@@ -44,22 +54,26 @@ const Notes: React.FC = () => {
   const [initialLoader, setInitialLoader] = useState<boolean>(false);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
   const [isCreatingNote, setIsCreatingNote] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>("");
+  const [sortBy, setSortBy] = useState({
+    value: "createdAt",
+    text: "Created Date",
+  });
 
-  // Set user on initial mount
-  useEffect(() => {
-    const userData = window?.localStorage?.getItem("loggedNoteappUser");
-    if (userData) {
-      const parsedUser: UserType = JSON.parse(userData);
-      setUser(parsedUser);
+  const handleDropDownChange = (val: string) => {
+    console.log("selected", val);
+    if (val === "createdAt") {
+      setSortBy({ value: "createdAt", text: "Created Date" });
+    } else if (val === "updatedAt") {
+      setSortBy({ value: "updatedAt", text: "Last Updated" });
     }
-  }, []);
+  };
 
-  // Fetch notes once user is available
-  useEffect(() => {
+  const fetchUserNotes = useCallback(() => {
+    console.log("");
     if (user) {
-      setInitialLoader(true);
       noteService
-        .getAll(user.userId)
+        .getAll(user?.userId, sortBy.value)
         .then((data: INote[]) => {
           setNotes(data);
           setInitialLoader(false);
@@ -69,7 +83,23 @@ const Notes: React.FC = () => {
           setInitialLoader(false);
         });
     }
-  }, [user]);
+  }, [user, sortBy]);
+
+  useEffect(() => {
+    const userData = window?.localStorage?.getItem("loggedNoteappUser");
+    if (userData) {
+      const parsedUser: UserType = JSON.parse(userData);
+      setUser(parsedUser);
+    }
+  }, []);
+
+  // 2. Fetch notes once user is set
+  useEffect(() => {
+    if (user) {
+      setInitialLoader(true);
+      fetchUserNotes();
+    }
+  }, [user, fetchUserNotes]);
 
   const setNoteLoading = (
     noteId: string,
@@ -121,16 +151,16 @@ const Notes: React.FC = () => {
     }
   };
 
+  console.log("notes", notes);
   const toggleImportanceOf = async (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
 
     const changedNote = { ...note, important: !note.important };
     setNoteLoading(id, "toggleImportance", true);
-
     try {
-      const updated = await noteService.update(id, changedNote);
-      setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)));
+      await noteService.update(id, changedNote);
+      fetchUserNotes();
     } catch {
       toast.error("Failed to toggle importance");
     } finally {
@@ -159,8 +189,36 @@ const Notes: React.FC = () => {
     setNoteToEdit(note);
   };
 
-  const notesToShow = showAll ? notes : notes.filter((n) => n.important);
+  let notesToShow = showAll ? notes : notes.filter((n) => n.important);
 
+  const normalizedSearch = searchText.trim().toLowerCase();
+
+  function highlightText(text: string, search: string) {
+    if (!search) return text;
+
+    const regex = new RegExp(`(${search})`, "gi");
+    const parts = text.split(regex);
+
+    return parts.map((part, i) =>
+      part.toLowerCase() === search.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-200">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  }
+
+  if (normalizedSearch) {
+    notesToShow = notesToShow.filter((item) => {
+      const title = item.title?.toLowerCase() || "";
+      const content = item.content?.toLowerCase() || "";
+      return (
+        title.includes(normalizedSearch) || content.includes(normalizedSearch)
+      );
+    });
+  }
   const renderNoteTimestamp = (createdAt: string, updatedAt: string) => {
     const created = new Date(createdAt);
     const updated = new Date(updatedAt);
@@ -202,7 +260,7 @@ const Notes: React.FC = () => {
           <div className="w-full">
             <div className="flex items-center justify-between">
               <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-                {note.title}
+                {highlightText(note.title, searchText)}
               </h4>
               <div className="flex items-center gap-3 text-muted-foreground">
                 <button
@@ -243,7 +301,9 @@ const Notes: React.FC = () => {
               </div>
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center">{note.content}</div>
+            <div className="flex items-center">
+              {highlightText(note.content, searchText)}
+            </div>
           </div>
         </div>
         {renderNoteTimestamp(note.createdAt, note.updatedAt)}
@@ -255,6 +315,31 @@ const Notes: React.FC = () => {
     setNoteModalType(NOTE_MODAL_TYPE.CREATE);
     setAddEditModalOpen(true);
     setNoteToEdit(null);
+  };
+
+  const FilterNotes = () => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">Sort By : {sortBy.text}</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          <DropdownMenuLabel>Sort Notes By</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={sortBy.value}
+            onValueChange={handleDropDownChange}
+          >
+            <DropdownMenuRadioItem value="createdAt">
+              Created Date
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="updatedAt">
+              Last Updated
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   return (
@@ -280,6 +365,27 @@ const Notes: React.FC = () => {
         cancelText="Cancel"
         isLoading={loadingStates[noteToDelete]?.delete || false}
       />
+      <div className="relative">
+        <Input
+          placeholder="Start typing to search notes..."
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+          }}
+          className="pr-[24px]"
+        />
+        {searchText && (
+          <span
+            onClick={() => {
+              setSearchText("");
+            }}
+            className="absolute cursor-pointer right-[8px] top-[6px]"
+          >
+            <ClearIcon />
+          </span>
+        )}
+      </div>
+
       <div className="flex gap-4 my-4">
         <Button
           variant="default"
@@ -299,6 +405,7 @@ const Notes: React.FC = () => {
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
         </Button>
+        <FilterNotes />
       </div>
 
       <ul className="flex flex-col gap-2 mt-4">

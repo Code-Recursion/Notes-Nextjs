@@ -31,7 +31,7 @@ const Confirm = ({
   description = "This action cannot be undone.",
   confirmText = "Continue",
   cancelText = "Cancel",
-  isLoading = "false",
+  isLoading = false,
 }: ConfirmProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={handleClose}>

@@ -33,7 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
   };
 
   return (
-    <div className="grid [height:calc(100vh-200px)] place-items-center">
+    <div className="grid [height:calc(100vh-70px)] place-items-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
@@ -60,7 +60,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                   <a
-                    href="#"
+                    onClick={(e) => {
+                      toast.info("Feature is under dev");
+                      e.preventDefault();
+                    }}
+                    href=""
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     Forgot password?
@@ -75,12 +79,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
-                  <div
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-[8px] top-[4px]"
-                  >
-                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                  </div>
+                  {password && (
+                    <div
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-[8px] top-[4px]"
+                    >
+                      {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -99,7 +105,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
               onClick={(e) => {
                 toast.info("Feature is under dev");
                 e.preventDefault();
-                return;
               }}
             >
               <Button variant="outline" className="w-full">

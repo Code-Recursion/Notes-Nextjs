@@ -35,14 +35,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     handleRegister({ username, name, password });
-    setUsername("");
-    setName("");
-    setPassword("");
-    setRepeatPassword("");
+    // setUsername("");
+    // setName("");
+    // setPassword("");
+    // setRepeatPassword("");
   };
 
   return (
-    <div className="grid place-items-center [height:calc(100vh-200px)] px-4">
+    <div className="grid place-items-center [height:calc(100vh-70px)] px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
@@ -82,7 +82,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 />
                 <div
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-[8px] top-[4px]"
+                  className="absolute right-[8px] top-[4px] p-[4px]"
                 >
                   {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
                 </div>
@@ -98,12 +98,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   onChange={(e) => setRepeatPassword(e.target.value)}
                   required
                 />
-                <div
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-[8px] top-[4px]"
-                >
-                  {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                </div>
+                {password && (
+                  <div
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-[8px] top-[4px]"
+                  >
+                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                  </div>
+                )}
               </div>
             </div>
             <CardFooter className="flex-col gap-2">
