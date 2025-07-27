@@ -20,6 +20,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "../ui/input";
+import ClearIcon from "@/assets/ClearIcon";
 interface UserType {
   userId: string;
   name?: string;
@@ -52,6 +54,7 @@ const Notes: React.FC = () => {
   const [initialLoader, setInitialLoader] = useState<boolean>(false);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
   const [isCreatingNote, setIsCreatingNote] = useState<boolean>(false);
+  const [searchText, setSearchText] = useState<string>("");
   const [sortBy, setSortBy] = useState({
     value: "createdAt",
     text: "Created Date",
@@ -186,8 +189,36 @@ const Notes: React.FC = () => {
     setNoteToEdit(note);
   };
 
-  const notesToShow = showAll ? notes : notes.filter((n) => n.important);
+  let notesToShow = showAll ? notes : notes.filter((n) => n.important);
 
+  const normalizedSearch = searchText.trim().toLowerCase();
+
+  function highlightText(text: string, search: string) {
+    if (!search) return text;
+
+    const regex = new RegExp(`(${search})`, "gi");
+    const parts = text.split(regex);
+
+    return parts.map((part, i) =>
+      part.toLowerCase() === search.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-200">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  }
+
+  if (normalizedSearch) {
+    notesToShow = notesToShow.filter((item) => {
+      const title = item.title?.toLowerCase() || "";
+      const content = item.content?.toLowerCase() || "";
+      return (
+        title.includes(normalizedSearch) || content.includes(normalizedSearch)
+      );
+    });
+  }
   const renderNoteTimestamp = (createdAt: string, updatedAt: string) => {
     const created = new Date(createdAt);
     const updated = new Date(updatedAt);
@@ -229,7 +260,7 @@ const Notes: React.FC = () => {
           <div className="w-full">
             <div className="flex items-center justify-between">
               <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-                {note.title}
+                {highlightText(note.title, searchText)}
               </h4>
               <div className="flex items-center gap-3 text-muted-foreground">
                 <button
@@ -270,7 +301,9 @@ const Notes: React.FC = () => {
               </div>
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center">{note.content}</div>
+            <div className="flex items-center">
+              {highlightText(note.content, searchText)}
+            </div>
           </div>
         </div>
         {renderNoteTimestamp(note.createdAt, note.updatedAt)}
@@ -332,6 +365,27 @@ const Notes: React.FC = () => {
         cancelText="Cancel"
         isLoading={loadingStates[noteToDelete]?.delete || false}
       />
+      <div className="relative">
+        <Input
+          placeholder="Start typing to search notes..."
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+          }}
+          className="pr-[24px]"
+        />
+        {searchText && (
+          <span
+            onClick={() => {
+              setSearchText("");
+            }}
+            className="absolute cursor-pointer right-[8px] top-[6px]"
+          >
+            <ClearIcon />
+          </span>
+        )}
+      </div>
+
       <div className="flex gap-4 my-4">
         <Button
           variant="default"
