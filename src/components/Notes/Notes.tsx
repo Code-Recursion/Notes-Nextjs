@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import noteService from "@/services/noteService";
 import { Button } from "@/components/ui/button";
 import { INote } from "@/lib/types";
@@ -45,21 +45,11 @@ const Notes: React.FC = () => {
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({});
   const [isCreatingNote, setIsCreatingNote] = useState<boolean>(false);
 
-  // Set user on initial mount
-  useEffect(() => {
-    const userData = window?.localStorage?.getItem("loggedNoteappUser");
-    if (userData) {
-      const parsedUser: UserType = JSON.parse(userData);
-      setUser(parsedUser);
-    }
-  }, []);
-
-  // Fetch notes once user is available
-  useEffect(() => {
+  const fetchUserNotes = useCallback(() => {
     if (user) {
-      setInitialLoader(true);
+      console.log("user", user);
       noteService
-        .getAll(user.userId)
+        .getAll(user?.userId)
         .then((data: INote[]) => {
           setNotes(data);
           setInitialLoader(false);
@@ -70,6 +60,22 @@ const Notes: React.FC = () => {
         });
     }
   }, [user]);
+
+  useEffect(() => {
+    const userData = window?.localStorage?.getItem("loggedNoteappUser");
+    if (userData) {
+      const parsedUser: UserType = JSON.parse(userData);
+      setUser(parsedUser);
+    }
+  }, []);
+
+  // 2. Fetch notes once user is set
+  useEffect(() => {
+    if (user) {
+      setInitialLoader(true);
+      fetchUserNotes();
+    }
+  }, [user, fetchUserNotes]);
 
   const setNoteLoading = (
     noteId: string,
@@ -121,16 +127,16 @@ const Notes: React.FC = () => {
     }
   };
 
+  console.log("notes", notes);
   const toggleImportanceOf = async (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
 
     const changedNote = { ...note, important: !note.important };
     setNoteLoading(id, "toggleImportance", true);
-
     try {
-      const updated = await noteService.update(id, changedNote);
-      setNotes((prev) => prev.map((n) => (n.id !== id ? n : updated)));
+      await noteService.update(id, changedNote);
+      fetchUserNotes();
     } catch {
       toast.error("Failed to toggle importance");
     } finally {
