@@ -139,6 +139,7 @@ const Notes: React.FC = () => {
         );
         toast.info(`Note: "${noteData.title}" updated`);
       }
+      fetchUserNotes();
     } catch (error) {
       toast.error("Note operation failed!");
       console.log("error", error);
@@ -263,12 +264,12 @@ const Notes: React.FC = () => {
         <div className="flex justify-between items-start gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between">
-              <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+              <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center">
+            <div className="flex items-center text-sm clamp-10-lines overflow-hidden text-ellipsis">
               {highlightText(note.content, searchText)}
             </div>
           </div>
@@ -349,7 +350,7 @@ const Notes: React.FC = () => {
   };
 
   return (
-    <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
+    <div className="mx-4 md:mx-auto md:w-[75vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
 
       <AddEditNoteModal
@@ -392,7 +393,7 @@ const Notes: React.FC = () => {
         )}
       </div>
 
-      <div className="flex gap-4 my-4">
+      <div className="flex flex-wrap gap-4 my-4">
         <Button
           variant="default"
           onClick={handleAddNoteCTA}
@@ -414,23 +415,26 @@ const Notes: React.FC = () => {
         <FilterNotes />
       </div>
 
-      <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4">
+      {/* <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4"> */}
+      <ul className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
         {!initialLoader &&
           notesToShow.map((note) => (
-            <Note
-              key={note.id}
-              note={note}
-              toggleImportance={toggleImportanceOf}
-              handleDelete={() => {
-                setNoteToDelete(note.id);
-                setIsOpenConfirm(true);
-              }}
-              handleEditClick={() => handleEditClick(note)}
-              isLoading={false}
-            />
+            <li className="break-inside-avoid" key={note.id}>
+              <Note
+                key={note.id}
+                note={note}
+                toggleImportance={toggleImportanceOf}
+                handleDelete={() => {
+                  setNoteToDelete(note.id);
+                  setIsOpenConfirm(true);
+                }}
+                handleEditClick={() => handleEditClick(note)}
+                isLoading={false}
+              />
+            </li>
           ))}
       </ul>
     </div>
