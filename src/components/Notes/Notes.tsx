@@ -139,6 +139,7 @@ const Notes: React.FC = () => {
         );
         toast.info(`Note: "${noteData.title}" updated`);
       }
+      fetchUserNotes();
     } catch (error) {
       toast.error("Note operation failed!");
       console.log("error", error);
@@ -226,7 +227,7 @@ const Notes: React.FC = () => {
     const isUpdated = created.getTime() !== updated.getTime();
 
     return (
-      <div className="mt-2 text-xs text-muted-foreground self-end">
+      <div className="text-xs text-muted-foreground">
         {isUpdated
           ? `Updated: ${updated.toDateString()}`
           : `Created: ${created.toDateString()}`}
@@ -247,7 +248,11 @@ const Notes: React.FC = () => {
     handleEditClick,
     isLoading,
   }) => {
-    const Logo = note.important ? <StarFilled /> : <Star />;
+    const Logo = note.important ? (
+      <StarFilled className="size-4" />
+    ) : (
+      <Star className="size-4" />
+    );
     const noteLoadingState = loadingStates[note.id] || {};
 
     if (isLoading) {
@@ -255,58 +260,60 @@ const Notes: React.FC = () => {
     }
 
     return (
-      <div className="flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
+      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
         <div className="flex justify-between items-start gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between">
-              <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+              <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <button
-                  onClick={() => toggleImportance(note.id)}
-                  className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={noteLoadingState.toggleImportance}
-                >
-                  {noteLoadingState.toggleImportance ? (
-                    <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    Logo
-                  )}
-                </button>
-                <button
-                  onClick={handleEditClick}
-                  className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Edit note"
-                  disabled={noteLoadingState.edit}
-                >
-                  {noteLoadingState.edit ? (
-                    <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <EditIcon />
-                  )}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Delete note"
-                  disabled={noteLoadingState.delete}
-                >
-                  {noteLoadingState.delete ? (
-                    <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <DeleteIcon />
-                  )}
-                </button>
-              </div>
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center">
+            <div className="flex items-center text-sm clamp-10-lines overflow-hidden text-ellipsis">
               {highlightText(note.content, searchText)}
             </div>
           </div>
         </div>
-        {renderNoteTimestamp(note.createdAt, note.updatedAt)}
+        <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
+          <div className="flex gap-[8px]">
+            <button
+              onClick={() => toggleImportance(note.id)}
+              className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={noteLoadingState.toggleImportance}
+            >
+              {noteLoadingState.toggleImportance ? (
+                <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                Logo
+              )}
+            </button>
+            <button
+              onClick={handleEditClick}
+              className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Edit note"
+              disabled={noteLoadingState.edit}
+            >
+              {noteLoadingState.edit ? (
+                <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <EditIcon className="size-4" />
+              )}
+            </button>
+            <button
+              onClick={handleDelete}
+              className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Delete note"
+              disabled={noteLoadingState.delete}
+            >
+              {noteLoadingState.delete ? (
+                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <DeleteIcon className="size-4" />
+              )}
+            </button>
+          </div>
+          {renderNoteTimestamp(note.createdAt, note.updatedAt)}
+        </div>
       </div>
     );
   };
@@ -343,7 +350,7 @@ const Notes: React.FC = () => {
   };
 
   return (
-    <div className="mx-4 md:mx-auto md:w-[60vw] mb-16">
+    <div className="mx-4 md:mx-auto md:w-[75vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
 
       <AddEditNoteModal
@@ -386,7 +393,7 @@ const Notes: React.FC = () => {
         )}
       </div>
 
-      <div className="flex gap-4 my-4">
+      <div className="flex flex-wrap gap-4 my-4">
         <Button
           variant="default"
           onClick={handleAddNoteCTA}
@@ -408,23 +415,26 @@ const Notes: React.FC = () => {
         <FilterNotes />
       </div>
 
-      <ul className="flex flex-col gap-2 mt-4">
+      {/* <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4"> */}
+      <ul className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
         {!initialLoader &&
           notesToShow.map((note) => (
-            <Note
-              key={note.id}
-              note={note}
-              toggleImportance={toggleImportanceOf}
-              handleDelete={() => {
-                setNoteToDelete(note.id);
-                setIsOpenConfirm(true);
-              }}
-              handleEditClick={() => handleEditClick(note)}
-              isLoading={false}
-            />
+            <li className="break-inside-avoid" key={note.id}>
+              <Note
+                key={note.id}
+                note={note}
+                toggleImportance={toggleImportanceOf}
+                handleDelete={() => {
+                  setNoteToDelete(note.id);
+                  setIsOpenConfirm(true);
+                }}
+                handleEditClick={() => handleEditClick(note)}
+                isLoading={false}
+              />
+            </li>
           ))}
       </ul>
     </div>

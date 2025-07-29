@@ -1,6 +1,6 @@
 import React from "react";
 
-const Star = ({ bg = "white", width = 24, height = 24 }) => {
+const Star = ({ bg = "white", width = 24, height = 24,...props }) => {
   return (
     <svg
       width={width}
@@ -11,6 +11,8 @@ const Star = ({ bg = "white", width = 24, height = 24 }) => {
       strokeWidth={1.5}
       stroke="currentColor"
       className="size-6"
+          {...props}
+
     >
       <path
         strokeLinecap="round"
