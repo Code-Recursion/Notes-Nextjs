@@ -34,7 +34,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <Navbar user={user} />
         <Toaster closeButton duration={3000} expand />
 
-        <Component {...pageProps} />
+        <Component {...pageProps} user={user} setUser={setUser} />
       </ThemeProvider>
     </main>
   );

@@ -14,20 +14,31 @@ import { Label } from "@/components/ui/label";
 import EyeIcon from "@/assets/EyeIcon";
 import EyeSlashIcon from "@/assets/EyeSlashIcon";
 import { toast } from "sonner";
+import { UserType } from "@/lib/types";
 
 type LoginFormProps = {
   handleLogin: (credentials: { username: string; password: string }) => void;
   toggleForm: () => void;
+  setUser: (user: UserType) => void;
 };
 
-const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
+const LoginForm: React.FC<LoginFormProps> = ({
+  handleLogin,
+  toggleForm,
+  setUser,
+}) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleLogin({ username, password });
+    const loggedInUser = await handleLogin({ username, password });
+
+    // handleLogin({ username, password });
+    if (loggedInUser) {
+      setUser(loggedInUser);
+    }
     setUsername("");
     setPassword("");
   };
@@ -95,7 +106,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
                 Login
               </Button>
             </CardFooter>
-            <div className="mt-[8px] after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+            <Button
+              className="block m-[6px]"
+              variant={"ghost"}
+              onClick={() => {
+                setUsername("admin");
+                setPassword("password");
+              }}
+            >
+              <span className="text-muted-foreground relative z-10 px-2">
+                Demo Login (One Click login)
+              </span>
+            </Button>
+            {/* <div className="mt-[8px] after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
               <span className="bg-background text-muted-foreground relative z-10 px-2">
                 Or continue with
               </span>
@@ -125,7 +148,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ handleLogin, toggleForm }) => {
                 </svg>
                 Login with Google
               </Button>
-            </div>
+            </div> */}
             <CardAction className="pt-2 text-center mx-auto">
               <Button variant="link" onClick={toggleForm}>
                 New User? Sign up here

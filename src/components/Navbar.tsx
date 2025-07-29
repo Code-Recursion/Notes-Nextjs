@@ -17,6 +17,7 @@ type NavbarProps = {
 };
 
 const Navbar: React.FC<NavbarProps> = ({ user }) => {
+  React.useEffect(() => {}, [user]);
   const handleLogout = () => {
     localStorage.removeItem("loggedNoteappUser");
     window.location.reload(); // or redirect to login
