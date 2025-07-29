@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "../ui/input";
 import ClearIcon from "@/assets/ClearIcon";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 interface UserType {
   userId: string;
   name?: string;
@@ -59,6 +61,7 @@ const Notes: React.FC = () => {
     value: "createdAt",
     text: "Created Date",
   });
+  const [listView, setListView] = useState<boolean>(false);
 
   const handleDropDownChange = (val: string) => {
     console.log("selected", val);
@@ -152,7 +155,6 @@ const Notes: React.FC = () => {
     }
   };
 
-  console.log("notes", notes);
   const toggleImportanceOf = async (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
@@ -241,6 +243,7 @@ const Notes: React.FC = () => {
     handleDelete: () => void;
     handleEditClick: () => void;
     isLoading: boolean;
+    listView: boolean;
   }> = ({
     note,
     toggleImportance,
@@ -248,6 +251,48 @@ const Notes: React.FC = () => {
     handleEditClick,
     isLoading,
   }) => {
+    const NoteAction = () => {
+      return (
+        <div className="flex gap-[8px]">
+          <button
+            onClick={() => toggleImportance(note.id)}
+            className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={noteLoadingState.toggleImportance}
+          >
+            {noteLoadingState.toggleImportance ? (
+              <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              Logo
+            )}
+          </button>
+          <button
+            onClick={handleEditClick}
+            className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Edit note"
+            disabled={noteLoadingState.edit}
+          >
+            {noteLoadingState.edit ? (
+              <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <EditIcon className="size-4" />
+            )}
+          </button>
+          <button
+            onClick={handleDelete}
+            className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Delete note"
+            disabled={noteLoadingState.delete}
+          >
+            {noteLoadingState.delete ? (
+              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <DeleteIcon className="size-4" />
+            )}
+          </button>
+        </div>
+      );
+    };
+
     const Logo = note.important ? (
       <StarFilled className="size-4" />
     ) : (
@@ -267,6 +312,7 @@ const Notes: React.FC = () => {
               <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
+              {listView && <NoteAction />}
             </div>
             <Separator className="w-full my-2" />
             <div className="flex items-center text-sm clamp-10-lines overflow-hidden text-ellipsis">
@@ -275,43 +321,7 @@ const Notes: React.FC = () => {
           </div>
         </div>
         <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
-          <div className="flex gap-[8px]">
-            <button
-              onClick={() => toggleImportance(note.id)}
-              className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={noteLoadingState.toggleImportance}
-            >
-              {noteLoadingState.toggleImportance ? (
-                <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                Logo
-              )}
-            </button>
-            <button
-              onClick={handleEditClick}
-              className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Edit note"
-              disabled={noteLoadingState.edit}
-            >
-              {noteLoadingState.edit ? (
-                <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <EditIcon className="size-4" />
-              )}
-            </button>
-            <button
-              onClick={handleDelete}
-              className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Delete note"
-              disabled={noteLoadingState.delete}
-            >
-              {noteLoadingState.delete ? (
-                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <DeleteIcon className="size-4" />
-              )}
-            </button>
-          </div>
+          {!listView && <NoteAction />}
           {renderNoteTimestamp(note.createdAt, note.updatedAt)}
         </div>
       </div>
@@ -349,6 +359,7 @@ const Notes: React.FC = () => {
     );
   };
 
+  console.log("listView", listView);
   return (
     <div className="mx-4 md:mx-auto md:w-[75vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
@@ -409,21 +420,37 @@ const Notes: React.FC = () => {
             "Add Note"
           )}
         </Button>
+
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
         </Button>
         <FilterNotes />
+        <div className="flex justify-between items-center">
+          <Label htmlFor="listView" className="pr-[8px]">
+            List view
+          </Label>
+          <Switch
+            checked={listView}
+            onCheckedChange={() => setListView((prev) => !prev)}
+          />
+        </div>
       </div>
 
-      {/* <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4"> */}
-      <ul className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
+      <ul
+        className={
+          listView
+            ? "flex flex-col gap-[16px]"
+            : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4"
+        }
+      >
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
         {!initialLoader &&
           notesToShow.map((note) => (
-            <li className="break-inside-avoid" key={note.id}>
+            <li className={listView ? "" : `break-inside-avoid`} key={note.id}>
               <Note
+                listView={listView}
                 key={note.id}
                 note={note}
                 toggleImportance={toggleImportanceOf}
