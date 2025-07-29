@@ -274,7 +274,7 @@ const Notes: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="left-0 px-[12px] py-[8px] items-center justify-between w-full flex absolute bottom-0 text-muted-foreground">
+        <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
           <div className="flex gap-[8px]">
             <button
               onClick={() => toggleImportance(note.id)}
