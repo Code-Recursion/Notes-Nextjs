@@ -7,7 +7,7 @@ import { Credentials, UserType } from "@/lib/types";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
 
-export default function Home() {
+export default function Home({ setUser }) {
   const [showLogin, setShowLogin] = useState(true);
   // const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function Home() {
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       toast.success(`Logged in successfully!`);
       router.push("/notes");
+      return user;
     } catch (exception) {
       console.log("erro while logging in", exception);
       toast.error(`${exception?.response?.data?.error}`);
@@ -57,7 +58,11 @@ export default function Home() {
     <>
       <div className="p-[16px] md:p-0">
         {showLogin ? (
-          <LoginForm handleLogin={handleLogin} toggleForm={toggleForm} />
+          <LoginForm
+            handleLogin={handleLogin}
+            setUser={setUser}
+            toggleForm={toggleForm}
+          />
         ) : (
           <RegisterForm
             handleRegister={handleRegister}
