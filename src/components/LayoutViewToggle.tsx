@@ -1,6 +1,11 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ILAYOUT_VIEW_TYPE } from "@/types/note";
 import { LayoutList, LayoutGrid, LayoutDashboard } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function LayoutViewToggle({
   layoutView,
@@ -10,7 +15,7 @@ export function LayoutViewToggle({
   setLayoutView: (val: ILAYOUT_VIEW_TYPE) => void;
 }) {
   return (
-    <div className="flex items-center gap-4">
+    <div className="items-center hidden sm:flex gap-4">
       <ToggleGroup
         type="single"
         value={layoutView}
@@ -18,13 +23,36 @@ export function LayoutViewToggle({
         className="border rounded-lg"
       >
         <ToggleGroupItem value="list" aria-label="List View">
-          <LayoutList className="h-5 w-5" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <LayoutList className="h-5 w-5" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>List View</TooltipContent>
+          </Tooltip>
         </ToggleGroupItem>
+
         <ToggleGroupItem value="grid" aria-label="Grid View">
-          <LayoutGrid className="h-5 w-5" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <LayoutGrid className="h-5 w-5" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Grid View</TooltipContent>
+          </Tooltip>
         </ToggleGroupItem>
+
         <ToggleGroupItem value="bento" aria-label="Bento View">
-          <LayoutDashboard className="h-5 w-5" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <LayoutDashboard className="h-5 w-5" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Bento View</TooltipContent>
+          </Tooltip>
         </ToggleGroupItem>
       </ToggleGroup>
 

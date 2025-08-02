@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Toaster } from "sonner";
 import { useEffect, useState } from "react";
 import { UserType } from "@/lib/types";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,10 +32,12 @@ export default function App({ Component, pageProps }: AppProps) {
         disableTransitionOnChange
         themes={["light", "dark"]}
       >
-        <Navbar user={user} />
-        <Toaster closeButton duration={3000} expand />
+        <TooltipProvider delayDuration={200}>
+          <Navbar user={user} />
+          <Toaster closeButton duration={3000} expand />
 
-        <Component {...pageProps} user={user} setUser={setUser} />
+          <Component {...pageProps} user={user} setUser={setUser} />
+        </TooltipProvider>
       </ThemeProvider>
     </main>
   );
