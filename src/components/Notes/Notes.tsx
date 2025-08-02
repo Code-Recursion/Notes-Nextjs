@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "../ui/input";
 import ClearIcon from "@/assets/ClearIcon";
-import { Switch } from "../ui/switch";
-import { Label } from "../ui/label";
+import { LayoutViewToggle } from "../LayoutViewToggle";
+import { ILAYOUT_VIEW_TYPE } from "@/types/note";
+import clsx from "clsx";
 interface UserType {
   userId: string;
   name?: string;
@@ -61,10 +62,9 @@ const Notes: React.FC = () => {
     value: "createdAt",
     text: "Created Date",
   });
-  const [listView, setListView] = useState<boolean>(false);
+  const [layoutView, setLayoutView] = useState<ILAYOUT_VIEW_TYPE>("grid");
 
   const handleDropDownChange = (val: string) => {
-    console.log("selected", val);
     if (val === "createdAt") {
       setSortBy({ value: "createdAt", text: "Created Date" });
     } else if (val === "updatedAt") {
@@ -73,7 +73,6 @@ const Notes: React.FC = () => {
   };
 
   const fetchUserNotes = useCallback(() => {
-    console.log("");
     if (user) {
       noteService
         .getAll(user?.userId, sortBy.value)
@@ -243,7 +242,7 @@ const Notes: React.FC = () => {
     handleDelete: () => void;
     handleEditClick: () => void;
     isLoading: boolean;
-    listView: boolean;
+    layoutView: string;
   }> = ({
     note,
     toggleImportance,
@@ -305,23 +304,24 @@ const Notes: React.FC = () => {
     }
 
     return (
-      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
+      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4 h-full">
+        {/* <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4"> */}
         <div className="flex justify-between items-start gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between">
               <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
-              {listView && <NoteAction />}
+              {true && <NoteAction />}
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center text-sm clamp-10-lines overflow-hidden text-ellipsis">
+            <div className="text-sm line-clamp-6 overflow-hidden">
               {highlightText(note.content, searchText)}
             </div>
           </div>
         </div>
         <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
-          {!listView && <NoteAction />}
+          {!true && <NoteAction />}
           {renderNoteTimestamp(note.createdAt, note.updatedAt)}
         </div>
       </div>
@@ -359,7 +359,6 @@ const Notes: React.FC = () => {
     );
   };
 
-  console.log("listView", listView);
   return (
     <div className="mx-4 md:mx-auto md:w-[75vw] mb-16">
       <h1 className="text-[54px]">Notes</h1>
@@ -426,31 +425,35 @@ const Notes: React.FC = () => {
         </Button>
         <FilterNotes />
         <div className="flex justify-between items-center">
-          <Label htmlFor="listView" className="pr-[8px]">
-            List view
-          </Label>
-          <Switch
-            checked={listView}
-            onCheckedChange={() => setListView((prev) => !prev)}
+          <LayoutViewToggle
+            layoutView={layoutView}
+            setLayoutView={setLayoutView}
           />
         </div>
       </div>
-
       <ul
-        className={
-          listView
-            ? "flex flex-col gap-[16px]"
-            : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4"
-        }
+        className={clsx({
+          "flex flex-col gap-[16px]": layoutView === "list",
+          "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4":
+            layoutView === "bento",
+          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 auto-rows-fr":
+            layoutView === "grid",
+        })}
       >
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
         {!initialLoader &&
           notesToShow.map((note) => (
-            <li className={listView ? "" : `break-inside-avoid`} key={note.id}>
+            <li
+              className={clsx({
+                "break-inside-avoid": layoutView === "bento",
+                "w-full h-full": layoutView === "grid",
+              })}
+              key={note.id}
+            >
               <Note
-                listView={listView}
+                layoutView={layoutView}
                 key={note.id}
                 note={note}
                 toggleImportance={toggleImportanceOf}
