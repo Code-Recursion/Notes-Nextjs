@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "../ui/input";
 import ClearIcon from "@/assets/ClearIcon";
+import { LayoutViewToggle } from "../LayoutViewToggle";
+import { ILAYOUT_VIEW_TYPE } from "@/types/note";
+import clsx from "clsx";
 interface UserType {
   userId: string;
   name?: string;
@@ -59,9 +62,9 @@ const Notes: React.FC = () => {
     value: "createdAt",
     text: "Created Date",
   });
+  const [layoutView, setLayoutView] = useState<ILAYOUT_VIEW_TYPE>("grid");
 
   const handleDropDownChange = (val: string) => {
-    console.log("selected", val);
     if (val === "createdAt") {
       setSortBy({ value: "createdAt", text: "Created Date" });
     } else if (val === "updatedAt") {
@@ -70,7 +73,6 @@ const Notes: React.FC = () => {
   };
 
   const fetchUserNotes = useCallback(() => {
-    console.log("");
     if (user) {
       noteService
         .getAll(user?.userId, sortBy.value)
@@ -152,7 +154,6 @@ const Notes: React.FC = () => {
     }
   };
 
-  console.log("notes", notes);
   const toggleImportanceOf = async (id: string) => {
     const note = notes.find((n) => n.id === id);
     if (!note) return;
@@ -241,6 +242,7 @@ const Notes: React.FC = () => {
     handleDelete: () => void;
     handleEditClick: () => void;
     isLoading: boolean;
+    layoutView: string;
   }> = ({
     note,
     toggleImportance,
@@ -248,6 +250,48 @@ const Notes: React.FC = () => {
     handleEditClick,
     isLoading,
   }) => {
+    const NoteAction = () => {
+      return (
+        <div className="flex gap-[8px]">
+          <button
+            onClick={() => toggleImportance(note.id)}
+            className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={noteLoadingState.toggleImportance}
+          >
+            {noteLoadingState.toggleImportance ? (
+              <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              Logo
+            )}
+          </button>
+          <button
+            onClick={handleEditClick}
+            className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Edit note"
+            disabled={noteLoadingState.edit}
+          >
+            {noteLoadingState.edit ? (
+              <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <EditIcon className="size-4" />
+            )}
+          </button>
+          <button
+            onClick={handleDelete}
+            className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Delete note"
+            disabled={noteLoadingState.delete}
+          >
+            {noteLoadingState.delete ? (
+              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <DeleteIcon className="size-4" />
+            )}
+          </button>
+        </div>
+      );
+    };
+
     const Logo = note.important ? (
       <StarFilled className="size-4" />
     ) : (
@@ -260,58 +304,24 @@ const Notes: React.FC = () => {
     }
 
     return (
-      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4">
+      <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4 h-full">
+        {/* <div className="pb-[64px] relative flex flex-col bg-card text-card-foreground border border-border rounded-md p-4"> */}
         <div className="flex justify-between items-start gap-3">
           <div className="w-full">
             <div className="flex items-center justify-between">
               <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
+              {true && <NoteAction />}
             </div>
             <Separator className="w-full my-2" />
-            <div className="flex items-center text-sm clamp-10-lines overflow-hidden text-ellipsis">
+            <div className="text-sm line-clamp-6 overflow-hidden">
               {highlightText(note.content, searchText)}
             </div>
           </div>
         </div>
         <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
-          <div className="flex gap-[8px]">
-            <button
-              onClick={() => toggleImportance(note.id)}
-              className="hover:text-yellow-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={noteLoadingState.toggleImportance}
-            >
-              {noteLoadingState.toggleImportance ? (
-                <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                Logo
-              )}
-            </button>
-            <button
-              onClick={handleEditClick}
-              className="cursor-pointer text-muted-foreground hover:text-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Edit note"
-              disabled={noteLoadingState.edit}
-            >
-              {noteLoadingState.edit ? (
-                <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <EditIcon className="size-4" />
-              )}
-            </button>
-            <button
-              onClick={handleDelete}
-              className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Delete note"
-              disabled={noteLoadingState.delete}
-            >
-              {noteLoadingState.delete ? (
-                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <DeleteIcon className="size-4" />
-              )}
-            </button>
-          </div>
+          {!true && <NoteAction />}
           {renderNoteTimestamp(note.createdAt, note.updatedAt)}
         </div>
       </div>
@@ -409,21 +419,41 @@ const Notes: React.FC = () => {
             "Add Note"
           )}
         </Button>
+
         <Button variant="secondary" onClick={() => setShowAll(!showAll)}>
           show {showAll ? "important" : "all"}
         </Button>
         <FilterNotes />
+        <div className="flex justify-between items-center">
+          <LayoutViewToggle
+            layoutView={layoutView}
+            setLayoutView={setLayoutView}
+          />
+        </div>
       </div>
-
-      {/* <ul className="grid lg:grid-cols-3 xl:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 md:grid-cols-2 gap-[16px] mt-4"> */}
-      <ul className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4">
+      <ul
+        className={clsx({
+          "flex flex-col gap-[16px]": layoutView === "list",
+          "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4":
+            layoutView === "bento",
+          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 auto-rows-fr":
+            layoutView === "grid",
+        })}
+      >
         {initialLoader &&
           [1, 2, 3, 4, 5, 6].map((item) => <NoteSkeleton key={item} />)}
         {isCreatingNote && <NoteSkeletonDetailed />}
         {!initialLoader &&
           notesToShow.map((note) => (
-            <li className="break-inside-avoid" key={note.id}>
+            <li
+              className={clsx({
+                "break-inside-avoid": layoutView === "bento",
+                "w-full h-full": layoutView === "grid",
+              })}
+              key={note.id}
+            >
               <Note
+                layoutView={layoutView}
                 key={note.id}
                 note={note}
                 toggleImportance={toggleImportanceOf}
