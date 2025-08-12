@@ -9,27 +9,26 @@ import { useRouter } from "next/router";
 
 export default function Home({ setUser }) {
   const [showLogin, setShowLogin] = useState(true);
-  // const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleLogin = async (credentials: Credentials) => {
-    // setIsAuthLoading(true);
+    setIsAuthLoading(true);
     try {
       const user: UserType = await loginService.login(credentials);
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       toast.success(`Logged in successfully!`);
-      router.push("/notes");
+      await router.push("/notes");
       return user;
     } catch (exception) {
-      console.log("erro while logging in", exception);
       toast.error(`${exception?.response?.data?.error}`);
     } finally {
-      // setIsAuthLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
   const handleRegister = async (credentials: Credentials) => {
-    // setIsAuthLoading(true);
+    setIsAuthLoading(true);
     try {
       await userService.register(credentials);
       const user: UserType = await loginService.login({
@@ -39,14 +38,13 @@ export default function Home({ setUser }) {
       });
       window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
       toast.success(`Registered successfully!`);
-      router.push("/notes");
+      await router.push("/notes");
     } catch (exception) {
-      console.log("exception.response?.data?.error", exception);
       toast.error(
         `Error while logging in!, ${exception?.response?.data?.error}`
       );
     } finally {
-      // setIsAuthLoading(true);
+      setIsAuthLoading(false);
     }
   };
 
@@ -62,6 +60,7 @@ export default function Home({ setUser }) {
             handleLogin={handleLogin}
             setUser={setUser}
             toggleForm={toggleForm}
+            isAuthLoading={isAuthLoading}
           />
         ) : (
           <RegisterForm
