@@ -312,7 +312,7 @@ const Notes: React.FC = () => {
               <h4 className="scroll-m-20 text-xl font-medium tracking-tight">
                 {highlightText(note.title, searchText)}
               </h4>
-              {true && <NoteAction />}
+              {layoutView === "list" && <NoteAction />}
             </div>
             <Separator className="w-full my-2" />
             <div className="text-sm line-clamp-6 overflow-hidden">
@@ -321,7 +321,7 @@ const Notes: React.FC = () => {
           </div>
         </div>
         <div className="flex-col gap-[8px] items-end left-0 px-[12px] py-[8px] justify-between w-full flex absolute bottom-0 text-muted-foreground">
-          {!true && <NoteAction />}
+          {layoutView !== "list" && <NoteAction />}
           {renderNoteTimestamp(note.createdAt, note.updatedAt)}
         </div>
       </div>
@@ -434,9 +434,9 @@ const Notes: React.FC = () => {
       <ul
         className={clsx({
           "flex flex-col gap-[16px]": layoutView === "list",
-          "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 mt-4":
+          "columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4 mt-4":
             layoutView === "bento",
-          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 auto-rows-fr":
+          "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:columns-5 gap-4 mt-4 auto-rows-fr":
             layoutView === "grid",
         })}
       >

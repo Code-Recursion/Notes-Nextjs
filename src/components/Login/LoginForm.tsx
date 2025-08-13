@@ -20,12 +20,14 @@ type LoginFormProps = {
   handleLogin: (credentials: { username: string; password: string }) => void;
   toggleForm: () => void;
   setUser: (user: UserType) => void;
+  isAuthLoading: boolean;
 };
 
 const LoginForm: React.FC<LoginFormProps> = ({
   handleLogin,
   toggleForm,
   setUser,
+  isAuthLoading,
 }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -102,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               </div>
             </div>
             <CardFooter className="flex-col mt-[24px] gap-2 px-0">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isAuthLoading}>
                 Login
               </Button>
             </CardFooter>
