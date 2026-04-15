@@ -361,7 +361,7 @@ const Notes: React.FC = () => {
 
   return (
     <div className="mx-4 md:mx-auto md:w-[75vw] mb-16">
-      <h1 className="text-[54px]">Notes</h1>
+      <h1 className="text-[54px]">Second Brain</h1>
 
       <AddEditNoteModal
         noteData={noteToEdit}
